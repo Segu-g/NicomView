@@ -5,7 +5,7 @@ import WebSocket from 'ws'
 
 const TEST_HTTP_PORT = 13939
 const TEST_WS_PORT = 13940
-const OVERLAY_PATH = path.join(__dirname, '../../resources/overlay')
+const PLUGIN_PATH = path.join(__dirname, '../../resources/plugins/nico-scroll')
 
 function waitForMessage(ws: WebSocket): Promise<unknown> {
   return new Promise((resolve) => {
@@ -29,9 +29,10 @@ describe('server', () => {
   beforeAll(async () => {
     server = await createServer({
       httpPort: TEST_HTTP_PORT,
-      wsPort: TEST_WS_PORT,
-      overlayPath: OVERLAY_PATH
+      wsPort: TEST_WS_PORT
     })
+    server.registerPluginRoute('nico-scroll', PLUGIN_PATH)
+    server.setOverlayRedirect('nico-scroll')
   })
 
   afterAll(async () => {
@@ -81,11 +82,19 @@ describe('server', () => {
   })
 
   describe('HTTP server', () => {
-    it('GET / が 200 を返す', async () => {
-      const res = await fetch(`http://localhost:${TEST_HTTP_PORT}/`)
+    it('GET / がアクティブオーバーレイにリダイレクトする', async () => {
+      const res = await fetch(`http://localhost:${TEST_HTTP_PORT}/`, { redirect: 'manual' })
+      expect(res.status).toBe(302)
+      expect(res.headers.get('location')).toBe('/plugins/nico-scroll/overlay/')
+    })
+
+    it('プラグインの静的ファイルを配信する', async () => {
+      const res = await fetch(
+        `http://localhost:${TEST_HTTP_PORT}/plugins/nico-scroll/overlay/index.html`
+      )
       expect(res.status).toBe(200)
       const text = await res.text()
-      expect(text).toContain('html')
+      expect(text).toContain('NicomView Overlay')
     })
   })
 })
