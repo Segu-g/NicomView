@@ -1,0 +1,8 @@
+{
+  "id": "md3-comment-list",
+  "name": "MD3 コメントリスト",
+  "version": "1.0.0",
+  "description": "Material Design 3 スタイルのコメントリスト表示",
+  "renderer": true,
+  "overlay": false
+}
