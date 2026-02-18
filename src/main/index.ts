@@ -80,6 +80,7 @@ async function createWindow(): Promise<void> {
   commentManager = new CommentManager(
     (options) => new NiconicoProvider(options),
     (event, data) => {
+      console.log(`[${event}]`, JSON.stringify(data))
       server?.broadcast(event, data)
       // レンダラーにもコメント転送
       mainWindow?.webContents.send('comment-event', {
