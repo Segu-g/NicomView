@@ -34,7 +34,7 @@ function CommentItem({ entry }: { entry: CommentEntry }) {
 
   switch (eventType) {
     case 'comment': {
-      const name = data.userName || data.userId || '匿名'
+      const name = data.userName || '匿名'
       return (
         <div className={`comment-item${data.isHistory ? ' history' : ''}`}>
           <UserIcon src={data.userIcon} />
