@@ -4,5 +4,6 @@
   "version": "1.0.0",
   "description": "ニコニコ風の横スクロールコメント表示（OBSオーバーレイ）",
   "renderer": false,
-  "overlay": true
+  "overlay": true,
+  "defaultFontSize": 32
 }

@@ -4,5 +4,6 @@
   "version": "1.0.0",
   "description": "Material Design 3 スタイルのコメントリスト表示",
   "renderer": false,
-  "overlay": true
+  "overlay": true,
+  "defaultFontSize": 14
 }

@@ -16,6 +16,7 @@ export interface PluginManifest {
   version: string
   description?: string
   overlay: boolean
+  defaultFontSize?: number
 }
 
 export interface PluginDescriptor extends PluginManifest {

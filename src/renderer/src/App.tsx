@@ -232,6 +232,7 @@ function App(): JSX.Element {
                       size="small"
                       label="fontSize"
                       type="number"
+                      placeholder={plugin.defaultFontSize != null ? String(plugin.defaultFontSize) : ''}
                       value={fontSizes[plugin.id] ?? ''}
                       onChange={(e) =>
                         setFontSizes((prev) => ({ ...prev, [plugin.id]: e.target.value }))
