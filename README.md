@@ -23,7 +23,6 @@
 | プラグイン | URL | 説明 |
 |---|---|---|
 | MD3 コメントリスト | `http://localhost:3939/plugins/md3-comment-list/overlay/` | ダークテーマのリスト形式（自動スクロール・200件上限） |
-| ニコニコ風スクロール | `http://localhost:3939/plugins/nico-scroll/overlay/` | 右から左に流れるニコニコ風コメント |
 | 通知カード | `http://localhost:3939/plugins/comment-cards/overlay/` | 通知ポップアップ風のカード表示（右からスライドイン・自動退場） |
 
 プラグイン一覧は `http://localhost:3939/` でも確認できる。
@@ -120,11 +119,6 @@ resources/plugins/
 │   └── overlay/
 │       ├── index.html            # コメントリスト表示画面
 │       └── overlay.js            # WebSocket 受信・リスト描画
-├── nico-scroll/
-│   ├── plugin.json
-│   └── overlay/
-│       ├── index.html            # ニコニコ風スクロール画面
-│       └── overlay.js            # WebSocket 受信・コメント描画
 └── comment-cards/
     ├── plugin.json
     └── overlay/
@@ -135,24 +129,13 @@ resources/plugins/
 ## OBS の設定
 
 1. ソースの追加 → **ブラウザ** を選択
-2. URL にプラグインの URL を入力（例: `http://localhost:3939/plugins/nico-scroll/overlay/`）
+2. URL にプラグインの URL を入力（例: `http://localhost:3939/plugins/md3-comment-list/overlay/`）
 3. 幅・高さを配信解像度に合わせる（例: 1920x1080）
 4. **カスタム CSS** は空のままで OK（背景は自動で透過）
 
-複数プラグインを同時に使用可能（例: スクロール + コメントリスト）。
+複数プラグインを同時に使用可能（例: コメントリスト + 通知カード）。
 
 ### コメントのカスタマイズ
-
-**ニコニコ風スクロール** — `resources/plugins/nico-scroll/overlay/index.html` の CSS カスタムプロパティで調整可能:
-
-```css
-:root {
-  --comment-size: 32px;       /* フォントサイズ */
-  --comment-color: #ffffff;   /* 文字色 */
-  --comment-speed: 5s;        /* 流れる速度 */
-  --comment-font: 'Yu Gothic', 'Hiragino Sans', sans-serif;
-}
-```
 
 **MD3 コメントリスト / 通知カード** — URL パラメータで調整可能:
 

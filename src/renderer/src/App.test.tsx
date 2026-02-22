@@ -27,12 +27,12 @@ beforeEach(() => {
         basePath: '/plugins/md3-comment-list'
       },
       {
-        id: 'nico-scroll',
-        name: 'ニコニコ風スクロール',
+        id: 'comment-cards',
+        name: '通知カード',
         version: '1.0.0',
         overlay: true,
         builtIn: true,
-        basePath: '/plugins/nico-scroll'
+        basePath: '/plugins/comment-cards'
       }
     ]),
     getPluginPreferences: vi.fn<CommentViewerAPI['getPluginPreferences']>().mockResolvedValue({
@@ -68,7 +68,7 @@ describe('App', () => {
         await screen.findByText('http://localhost:3939/plugins/md3-comment-list/overlay/')
       ).toBeInTheDocument()
       expect(
-        screen.getByText('http://localhost:3939/plugins/nico-scroll/overlay/')
+        screen.getByText('http://localhost:3939/plugins/comment-cards/overlay/')
       ).toBeInTheDocument()
     })
   })

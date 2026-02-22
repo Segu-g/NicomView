@@ -8,18 +8,7 @@ test.describe('Overlay HTTP server', () => {
     const html = await resp.text()
     expect(resp.status).toBe(200)
     expect(html).toContain('NicomView Plugins')
-    expect(html).toContain('nico-scroll')
     expect(html).toContain('md3-comment-list')
-  })
-
-  test('serves nico-scroll overlay HTML', async ({ electronApp }) => {
-    await electronApp.firstWindow()
-
-    const resp = await fetch('http://localhost:3939/plugins/nico-scroll/overlay/')
-    const html = await resp.text()
-    expect(resp.status).toBe(200)
-    expect(html).toContain('NicomView Overlay')
-    expect(html).toContain('overlay.js')
   })
 
   test('serves md3-comment-list overlay HTML', async ({ electronApp }) => {

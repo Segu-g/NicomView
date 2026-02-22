@@ -1,9 +1,0 @@
-{
-  "id": "nico-scroll",
-  "name": "ニコニコ風スクロール",
-  "version": "1.0.0",
-  "description": "ニコニコ風の横スクロールコメント表示（OBSオーバーレイ）",
-  "renderer": false,
-  "overlay": true,
-  "defaultFontSize": 32
-}
