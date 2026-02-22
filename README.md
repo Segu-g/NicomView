@@ -24,6 +24,7 @@
 |---|---|---|
 | MD3 コメントリスト | `http://localhost:3939/plugins/md3-comment-list/overlay/` | ダークテーマのリスト形式（自動スクロール・200件上限） |
 | ニコニコ風スクロール | `http://localhost:3939/plugins/nico-scroll/overlay/` | 右から左に流れるニコニコ風コメント |
+| 通知カード | `http://localhost:3939/plugins/comment-cards/overlay/` | 通知ポップアップ風のカード表示（右からスライドイン・自動退場） |
 
 プラグイン一覧は `http://localhost:3939/` でも確認できる。
 
@@ -119,11 +120,16 @@ resources/plugins/
 │   └── overlay/
 │       ├── index.html            # コメントリスト表示画面
 │       └── overlay.js            # WebSocket 受信・リスト描画
-└── nico-scroll/
+├── nico-scroll/
+│   ├── plugin.json
+│   └── overlay/
+│       ├── index.html            # ニコニコ風スクロール画面
+│       └── overlay.js            # WebSocket 受信・コメント描画
+└── comment-cards/
     ├── plugin.json
     └── overlay/
-        ├── index.html            # ニコニコ風スクロール画面
-        └── overlay.js            # WebSocket 受信・コメント描画
+        ├── index.html            # 通知カード表示画面
+        └── overlay.js            # WebSocket 受信・カード描画
 ```
 
 ## OBS の設定
@@ -137,7 +143,7 @@ resources/plugins/
 
 ### コメントのカスタマイズ
 
-`resources/plugins/nico-scroll/overlay/index.html` の CSS カスタムプロパティで調整可能:
+**ニコニコ風スクロール** — `resources/plugins/nico-scroll/overlay/index.html` の CSS カスタムプロパティで調整可能:
 
 ```css
 :root {
@@ -147,6 +153,13 @@ resources/plugins/
   --comment-font: 'Yu Gothic', 'Hiragino Sans', sans-serif;
 }
 ```
+
+**MD3 コメントリスト / 通知カード** — URL パラメータで調整可能:
+
+| パラメータ | 対象 | 説明 | 例 |
+|---|---|---|---|
+| `fontSize` | 両方 | フォントサイズ (px) | `?fontSize=24` |
+| `duration` | 通知カードのみ | カード表示時間 (秒、デフォルト 60) | `?duration=10` |
 
 ## リリース
 
