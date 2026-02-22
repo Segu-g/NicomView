@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { EventEmitter } from 'events'
+import type { ConnectionState } from '../shared/types'
 import { CommentManager } from './commentManager'
 
 // NiconicoProvider のモック
@@ -13,17 +14,17 @@ function createMockProvider() {
 }
 
 describe('CommentManager', () => {
-  let mockProvider: ReturnType<typeof createMockProvider>
-  let mockProviderFactory: ReturnType<typeof vi.fn>
-  let broadcastFn: ReturnType<typeof vi.fn>
-  let stateChangeFn: ReturnType<typeof vi.fn>
+  let mockProvider: MockProvider
+  let mockProviderFactory: ReturnType<typeof vi.fn<(opts: { liveId: string; cookies?: string }) => MockProvider>>
+  let broadcastFn: ReturnType<typeof vi.fn<(event: string, data: unknown) => void>>
+  let stateChangeFn: ReturnType<typeof vi.fn<(state: ConnectionState) => void>>
   let manager: CommentManager
 
   beforeEach(() => {
     mockProvider = createMockProvider()
-    mockProviderFactory = vi.fn().mockReturnValue(mockProvider)
-    broadcastFn = vi.fn()
-    stateChangeFn = vi.fn()
+    mockProviderFactory = vi.fn<(opts: { liveId: string; cookies?: string }) => MockProvider>().mockReturnValue(mockProvider)
+    broadcastFn = vi.fn<(event: string, data: unknown) => void>()
+    stateChangeFn = vi.fn<(state: ConnectionState) => void>()
     manager = new CommentManager(mockProviderFactory, broadcastFn, stateChangeFn)
   })
 

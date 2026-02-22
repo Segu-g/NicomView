@@ -2,17 +2,9 @@ import { contextBridge, ipcRenderer } from 'electron'
 import type {
   ConnectionState,
   PluginDescriptor,
-  PluginPreferences
+  PluginPreferences,
+  CommentViewerAPI
 } from '../shared/types'
-
-export interface CommentViewerAPI {
-  connect(liveId: string, cookies?: string): Promise<void>
-  disconnect(): Promise<void>
-  onStateChange(callback: (state: ConnectionState) => void): () => void
-  getPlugins(): Promise<PluginDescriptor[]>
-  getPluginPreferences(): Promise<PluginPreferences>
-  setPluginPreferences(prefs: Partial<PluginPreferences>): Promise<void>
-}
 
 const api: CommentViewerAPI = {
   connect(liveId: string, cookies?: string): Promise<void> {

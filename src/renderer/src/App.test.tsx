@@ -1,37 +1,23 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, act } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import type { ConnectionState, CommentViewerAPI } from '../../shared/types'
 import App from './App'
-
-type ConnectionState = 'disconnected' | 'connecting' | 'connected' | 'error'
-
-declare global {
-  interface Window {
-    commentViewerAPI: {
-      connect: ReturnType<typeof vi.fn>
-      disconnect: ReturnType<typeof vi.fn>
-      onStateChange: ReturnType<typeof vi.fn>
-      getPlugins: ReturnType<typeof vi.fn>
-      getPluginPreferences: ReturnType<typeof vi.fn>
-      setPluginPreferences: ReturnType<typeof vi.fn>
-    }
-  }
-}
 
 let stateChangeCallback: ((state: ConnectionState) => void) | null = null
 
 beforeEach(() => {
   stateChangeCallback = null
   window.commentViewerAPI = {
-    connect: vi.fn().mockResolvedValue(undefined),
-    disconnect: vi.fn().mockResolvedValue(undefined),
-    onStateChange: vi.fn().mockImplementation((cb: (state: ConnectionState) => void) => {
+    connect: vi.fn<CommentViewerAPI['connect']>().mockResolvedValue(undefined),
+    disconnect: vi.fn<CommentViewerAPI['disconnect']>().mockResolvedValue(undefined),
+    onStateChange: vi.fn<CommentViewerAPI['onStateChange']>().mockImplementation((cb) => {
       stateChangeCallback = cb
       return () => {
         stateChangeCallback = null
       }
     }),
-    getPlugins: vi.fn().mockResolvedValue([
+    getPlugins: vi.fn<CommentViewerAPI['getPlugins']>().mockResolvedValue([
       {
         id: 'md3-comment-list',
         name: 'MD3 コメントリスト',
@@ -49,10 +35,10 @@ beforeEach(() => {
         basePath: '/plugins/nico-scroll'
       }
     ]),
-    getPluginPreferences: vi.fn().mockResolvedValue({
+    getPluginPreferences: vi.fn<CommentViewerAPI['getPluginPreferences']>().mockResolvedValue({
       enabledEvents: ['comment', 'gift', 'emotion', 'notification', 'operatorComment']
     }),
-    setPluginPreferences: vi.fn().mockResolvedValue(undefined)
+    setPluginPreferences: vi.fn<CommentViewerAPI['setPluginPreferences']>().mockResolvedValue(undefined)
   }
 })
 
