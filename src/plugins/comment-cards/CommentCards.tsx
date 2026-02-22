@@ -17,7 +17,6 @@ let nextId = 0
 
 export function CommentCards() {
   const [cards, setCards] = useState<CardData[]>([])
-  const containerRef = useRef<HTMLDivElement>(null)
   const timersRef = useRef<Map<number, ReturnType<typeof setTimeout>>>(new Map())
 
   const getDuration = () => {
@@ -73,30 +72,6 @@ export function CommentCards() {
 
   useWebSocket(WS_URL, handleMessage)
 
-  // Overflow detection: mark one oldest card as exiting at a time.
-  // Wait for current exit animation to finish before marking another.
-  useEffect(() => {
-    const el = containerRef.current
-    if (!el) return
-
-    const hasExiting = cards.some((c) => c.exiting)
-    if (hasExiting) return
-
-    if (el.scrollHeight > el.clientHeight) {
-      const visibleCards = cards.filter((c) => !c.exiting)
-      if (visibleCards.length === 0) return
-
-      const oldest = visibleCards[visibleCards.length - 1]
-      const timer = timersRef.current.get(oldest.id)
-      if (timer) {
-        clearTimeout(timer)
-        timersRef.current.delete(oldest.id)
-      }
-
-      markExiting(oldest.id)
-    }
-  }, [cards, markExiting])
-
   const handleAnimationEnd = useCallback(
     (cardId: number, e: React.AnimationEvent) => {
       // Remove after the slot collapse animation completes
@@ -115,7 +90,7 @@ export function CommentCards() {
   }, [])
 
   return (
-    <div className="card-container" ref={containerRef}>
+    <div className="card-container">
       {cards.map((card) => (
         <div
           key={card.id}
