@@ -5,5 +5,5 @@
   "description": "Material Design 3 スタイルのコメントリスト表示",
   "renderer": false,
   "overlay": true,
-  "defaultFontSize": 14
+  "defaultFontSize": 28
 }
