@@ -99,8 +99,8 @@ export function CommentCards() {
 
   const handleAnimationEnd = useCallback(
     (cardId: number, e: React.AnimationEvent) => {
-      // Only remove after the exit animation completes
-      if (e.animationName === 'slideOut') {
+      // Remove after the slot collapse animation completes
+      if (e.animationName === 'slotCollapse') {
         removeCard(cardId)
       }
     },
@@ -119,17 +119,19 @@ export function CommentCards() {
       {cards.map((card) => (
         <div
           key={card.id}
-          className={`card ${card.type === 'operator' ? 'operator' : ''}${card.exiting ? ' exiting' : ''}`}
+          className={`card-slot${card.exiting ? ' exiting' : ''}`}
           onAnimationEnd={(e) => handleAnimationEnd(card.id, e)}
         >
-          {card.iconUrl ? (
-            <img className="avatar" src={card.iconUrl} alt="" />
-          ) : (
-            <div className="avatar placeholder" />
-          )}
-          <div className="card-body">
-            <div className="username">{card.username}</div>
-            <div className="content">{card.content}</div>
+          <div className={`card${card.type === 'operator' ? ' operator' : ''}`}>
+            {card.iconUrl ? (
+              <img className="avatar" src={card.iconUrl} alt="" />
+            ) : (
+              <div className="avatar placeholder" />
+            )}
+            <div className="card-body">
+              <div className="username">{card.username}</div>
+              <div className="content">{card.content}</div>
+            </div>
           </div>
         </div>
       ))}
