@@ -40,7 +40,9 @@
 ```
 my-plugin/
 ├── plugin.json      # マニフェスト（必須）
-└── overlay/         # オーバーレイファイル
+├── overlay/         # オーバーレイファイル
+│   └── index.html
+└── settings/        # 設定画面（任意）
     └── index.html
 ```
 
@@ -52,9 +54,16 @@ my-plugin/
   "name": "マイプラグイン",
   "version": "1.0.0",
   "description": "カスタム表示プラグイン",
-  "overlay": true
+  "overlay": true,
+  "settings": true
 }
 ```
+
+`"settings": true` を指定すると、設定 UI に歯車アイコンが表示され `settings/index.html` が iframe で読み込まれる。設定画面は `postMessage` で親ウィンドウと通信する:
+
+1. iframe が `{ type: 'nicomview:ready', pluginId }` を送信
+2. 親が `{ type: 'nicomview:settings-init', settings }` で保存済み設定を返す
+3. フォーム変更ごとに `{ type: 'nicomview:settings-update', pluginId, settings }` を送信
 
 オーバーレイは WebSocket (`ws://localhost:3940`) に接続し、JSON メッセージ `{ "event": "comment", "data": { ... } }` を受信してコメントを描画する。
 
@@ -113,17 +122,22 @@ src/
         └── components/
             └── EventFilter.tsx   # イベントフィルタ UI
 
-resources/plugins/
+src/plugins/
+├── hooks/                        # プラグイン共通フック
 ├── comment-list/
-│   ├── plugin.json
-│   └── overlay/
-│       ├── index.html            # コメントリスト表示画面
-│       └── overlay.js            # WebSocket 受信・リスト描画
+│   ├── main.tsx                  # オーバーレイエントリ
+│   ├── CommentList.tsx           # コメントリスト表示
+│   └── settings/                 # 設定画面（iframe で表示）
+│       ├── index.html
+│       ├── main.tsx
+│       └── Settings.tsx
 └── comment-cards/
-    ├── plugin.json
-    └── overlay/
-        ├── index.html            # 通知カード表示画面
-        └── overlay.js            # WebSocket 受信・カード描画
+    ├── main.tsx
+    ├── CommentCards.tsx
+    └── settings/
+        ├── index.html
+        ├── main.tsx
+        └── Settings.tsx
 ```
 
 ## OBS の設定
@@ -135,17 +149,17 @@ resources/plugins/
 
 複数プラグインを同時に使用可能（例: コメントリスト + 通知カード）。
 
-### コメントのカスタマイズ
+### プラグイン設定
 
-**コメントリスト / 通知カード** — URL パラメータで調整可能:
+各プラグインの歯車アイコンをクリックすると、プラグイン固有の設定画面が展開される。設定は `userData/plugin-settings.json` に永続化され、アプリ再起動後も保持される。
 
-| パラメータ | 対象 | 説明 | 例 |
+| 設定項目 | 対象 | デフォルト | 説明 |
 |---|---|---|---|
-| `fontSize` | 両方 | フォントサイズ (px) | `?fontSize=24` |
-| `duration` | 通知カードのみ | カード表示時間 (秒、デフォルト 60) | `?duration=10` |
-| `theme` | 両方 | テーマ (`dark` / `light`、デフォルト `dark`) | `?theme=light` |
+| フォントサイズ (px) | 両方 | 28 | コメントの文字サイズ |
+| テーマ | 両方 | ダーク | `dark` / `light` |
+| 表示時間 (秒) | 通知カードのみ | 60 | カードが自動退場するまでの時間 |
 
-設定 UI のテーマ切替トグルからも変更でき、コピーされる URL に自動で反映される。
+設定値は URL パラメータとしてプラグイン URL に自動反映される（例: `?fontSize=24&theme=light`）。URL をコピーして OBS に貼れば設定済みの状態で表示される。
 
 ## リリース
 
