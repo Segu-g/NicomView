@@ -5,17 +5,17 @@ test.describe('Plugin system', () => {
     await mainPage.waitForLoadState('networkidle')
 
     await expect(mainPage.locator('text=表示プラグイン')).toBeVisible()
-    await expect(mainPage.locator('text=MD3 コメントリスト')).toBeVisible()
+    await expect(mainPage.locator('text=コメントリスト')).toBeVisible()
     await expect(mainPage.locator('text=ニコニコ風スクロール')).toBeVisible()
   })
 
   test('plugin serves static files via HTTP', async ({ electronApp }) => {
     await electronApp.firstWindow()
 
-    const resp = await fetch('http://localhost:3939/plugins/md3-comment-list/plugin.json')
+    const resp = await fetch('http://localhost:3939/plugins/comment-list/plugin.json')
     expect(resp.status).toBe(200)
     const manifest = await resp.json()
-    expect(manifest.id).toBe('md3-comment-list')
+    expect(manifest.id).toBe('comment-list')
     expect(manifest.overlay).toBe(true)
   })
 

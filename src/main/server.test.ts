@@ -5,7 +5,7 @@ import WebSocket from 'ws'
 
 const TEST_HTTP_PORT = 13939
 const TEST_WS_PORT = 13940
-const PLUGIN_PATH = path.join(__dirname, '../../resources/plugins/md3-comment-list')
+const PLUGIN_PATH = path.join(__dirname, '../../resources/plugins/comment-list')
 
 function waitForMessage(ws: WebSocket): Promise<unknown> {
   return new Promise((resolve) => {
@@ -44,7 +44,7 @@ describe('server', () => {
       httpPort: TEST_HTTP_PORT,
       wsPort: TEST_WS_PORT
     })
-    server.registerPluginRoute('md3-comment-list', PLUGIN_PATH)
+    server.registerPluginRoute('comment-list', PLUGIN_PATH)
   })
 
   afterAll(async () => {
@@ -99,12 +99,12 @@ describe('server', () => {
       expect(res.status).toBe(200)
       const text = await res.text()
       expect(text).toContain('NicomView Plugins')
-      expect(text).toContain('md3-comment-list')
+      expect(text).toContain('comment-list')
     })
 
     it('プラグインの静的ファイルを配信する', async () => {
       const res = await fetch(
-        `http://localhost:${TEST_HTTP_PORT}/plugins/md3-comment-list/overlay/index.html`
+        `http://localhost:${TEST_HTTP_PORT}/plugins/comment-list/overlay/index.html`
       )
       expect(res.status).toBe(200)
       const text = await res.text()

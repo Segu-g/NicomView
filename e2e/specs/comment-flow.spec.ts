@@ -1,7 +1,7 @@
 import { test, expect } from '../fixtures/electron'
 
 test.describe('Comment flow', () => {
-  test('broadcast comment appears in md3-comment-list overlay', async ({ electronApp }) => {
+  test('broadcast comment appears in comment-list overlay', async ({ electronApp }) => {
     await electronApp.firstWindow()
 
     const overlayPage = await electronApp.evaluate(async ({ BrowserWindow }) => {
@@ -10,12 +10,12 @@ test.describe('Comment flow', () => {
         height: 600,
         webPreferences: { contextIsolation: false, nodeIntegration: false }
       })
-      await win.loadURL('http://localhost:3939/plugins/md3-comment-list/overlay/')
+      await win.loadURL('http://localhost:3939/plugins/comment-list/overlay/')
       return win.id
     })
 
     const pages = electronApp.windows()
-    const overlay = pages.find((p) => p.url().includes('md3-comment-list'))
+    const overlay = pages.find((p) => p.url().includes('comment-list'))
     expect(overlay).toBeDefined()
 
     await overlay!.waitForLoadState('networkidle')

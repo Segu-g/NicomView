@@ -19,12 +19,12 @@ beforeEach(() => {
     }),
     getPlugins: vi.fn<CommentViewerAPI['getPlugins']>().mockResolvedValue([
       {
-        id: 'md3-comment-list',
-        name: 'MD3 コメントリスト',
+        id: 'comment-list',
+        name: 'コメントリスト',
         version: '1.0.0',
         overlay: true,
         builtIn: true,
-        basePath: '/plugins/md3-comment-list'
+        basePath: '/plugins/comment-list'
       },
       {
         id: 'comment-cards',
@@ -46,26 +46,26 @@ describe('App', () => {
   describe('初期状態', () => {
     it('接続ボタンが表示されている', async () => {
       render(<App />)
-      await screen.findByText('MD3 コメントリスト')
+      await screen.findByText('コメントリスト')
       expect(screen.getByRole('button', { name: '接続' })).toBeInTheDocument()
     })
 
     it('放送ID入力フィールドが空である', async () => {
       render(<App />)
-      await screen.findByText('MD3 コメントリスト')
+      await screen.findByText('コメントリスト')
       expect(screen.getByPlaceholderText('lv123456789')).toHaveValue('')
     })
 
     it('表示プラグインセクションが表示されている', async () => {
       render(<App />)
-      await screen.findByText('MD3 コメントリスト')
+      await screen.findByText('コメントリスト')
       expect(screen.getByText('表示プラグイン')).toBeInTheDocument()
     })
 
     it('プラグインURLがロード後に表示される', async () => {
       render(<App />)
       expect(
-        await screen.findByText('http://localhost:3939/plugins/md3-comment-list/overlay/')
+        await screen.findByText('http://localhost:3939/plugins/comment-list/overlay/')
       ).toBeInTheDocument()
       expect(
         screen.getByText('http://localhost:3939/plugins/comment-cards/overlay/')

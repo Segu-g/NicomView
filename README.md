@@ -22,7 +22,7 @@
 
 | プラグイン | URL | 説明 |
 |---|---|---|
-| MD3 コメントリスト | `http://localhost:3939/plugins/md3-comment-list/overlay/` | ダークテーマのリスト形式（自動スクロール・200件上限） |
+| コメントリスト | `http://localhost:3939/plugins/comment-list/overlay/` | ダークテーマのリスト形式（自動スクロール・200件上限） |
 | 通知カード | `http://localhost:3939/plugins/comment-cards/overlay/` | 通知ポップアップ風のカード表示（右からスライドイン・自動退場） |
 
 プラグイン一覧は `http://localhost:3939/` でも確認できる。
@@ -114,7 +114,7 @@ src/
             └── EventFilter.tsx   # イベントフィルタ UI
 
 resources/plugins/
-├── md3-comment-list/
+├── comment-list/
 │   ├── plugin.json
 │   └── overlay/
 │       ├── index.html            # コメントリスト表示画面
@@ -129,7 +129,7 @@ resources/plugins/
 ## OBS の設定
 
 1. ソースの追加 → **ブラウザ** を選択
-2. URL にプラグインの URL を入力（例: `http://localhost:3939/plugins/md3-comment-list/overlay/`）
+2. URL にプラグインの URL を入力（例: `http://localhost:3939/plugins/comment-list/overlay/`）
 3. 幅・高さを配信解像度に合わせる（例: 1920x1080）
 4. **カスタム CSS** は空のままで OK（背景は自動で透過）
 
@@ -137,7 +137,7 @@ resources/plugins/
 
 ### コメントのカスタマイズ
 
-**MD3 コメントリスト / 通知カード** — URL パラメータで調整可能:
+**コメントリスト / 通知カード** — URL パラメータで調整可能:
 
 | パラメータ | 対象 | 説明 | 例 |
 |---|---|---|---|
