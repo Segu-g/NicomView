@@ -23,7 +23,7 @@
 | プラグイン | URL | 説明 |
 |---|---|---|
 | コメントリスト | `http://localhost:3939/plugins/comment-list/overlay/` | リスト形式（自動スクロール・200件上限） |
-| 通知カード | `http://localhost:3939/plugins/comment-cards/overlay/` | 通知ポップアップ風のカード表示（右からスライドイン・自動退場） |
+| 通知カード | `http://localhost:3939/plugins/comment-cards/overlay/` | カード表示（コメント・ギフト・通知・エモーション・運営コメント対応、右からスライドイン・自動退場） |
 
 プラグイン一覧は `http://localhost:3939/` でも確認できる。
 
