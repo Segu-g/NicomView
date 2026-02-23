@@ -305,7 +305,7 @@ function App(): JSX.Element {
                           data-testid={`settings-iframe-${plugin.id}`}
                           style={{
                             width: '100%',
-                            height: 160,
+                            height: 200,
                             border: 'none',
                             borderRadius: 8,
                             background: '#1e1e1e'

@@ -18,4 +18,9 @@ if (theme) {
   document.documentElement.dataset.theme = theme
 }
 
+const direction = params.get('direction')
+if (direction) {
+  document.documentElement.dataset.direction = direction
+}
+
 createRoot(document.getElementById('root')!).render(<CommentCards />)

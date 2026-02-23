@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import type { PluginSettings, PluginSettingsMessage } from '../../../shared/types'
 
-const DEFAULTS = { fontSize: 28, theme: 'dark' }
+const DEFAULTS = { fontSize: 28, theme: 'dark', direction: 'bottom' }
 
 interface Props {
   pluginId: string
@@ -10,6 +10,7 @@ interface Props {
 export function Settings({ pluginId }: Props) {
   const [fontSize, setFontSize] = useState(String(DEFAULTS.fontSize))
   const [theme, setTheme] = useState(DEFAULTS.theme)
+  const [direction, setDirection] = useState(DEFAULTS.direction)
   const [ready, setReady] = useState(false)
 
   useEffect(() => {
@@ -19,6 +20,7 @@ export function Settings({ pluginId }: Props) {
         const s = msg.settings
         setFontSize(String(s.fontSize ?? DEFAULTS.fontSize))
         setTheme(String(s.theme ?? DEFAULTS.theme))
+        setDirection(String(s.direction ?? DEFAULTS.direction))
         setReady(true)
       }
     }
@@ -37,19 +39,18 @@ export function Settings({ pluginId }: Props) {
     [pluginId]
   )
 
-  const handleFontSizeChange = (value: string) => {
-    setFontSize(value)
-    const settings: PluginSettings = { theme }
-    if (value) settings.fontSize = Number(value)
-    sendUpdate(settings)
-  }
-
-  const handleThemeChange = (value: string) => {
-    setTheme(value)
-    const settings: PluginSettings = { theme: value }
-    if (fontSize) settings.fontSize = Number(fontSize)
-    sendUpdate(settings)
-  }
+  const buildAndSend = useCallback(
+    (overrides: Partial<Record<string, string | number>>) => {
+      const settings: PluginSettings = {
+        fontSize: Number(fontSize),
+        theme,
+        direction,
+        ...overrides,
+      }
+      sendUpdate(settings)
+    },
+    [fontSize, theme, direction, sendUpdate]
+  )
 
   if (!ready) return null
 
@@ -61,14 +62,24 @@ export function Settings({ pluginId }: Props) {
           type="number"
           min={1}
           value={fontSize}
-          onChange={(e) => handleFontSizeChange(e.target.value)}
+          onChange={(e) => {
+            setFontSize(e.target.value)
+            buildAndSend({ fontSize: Number(e.target.value) || undefined })
+          }}
         />
       </label>
       <label className="settings-label">
         テーマ
-        <select value={theme} onChange={(e) => handleThemeChange(e.target.value)}>
+        <select value={theme} onChange={(e) => { setTheme(e.target.value); buildAndSend({ theme: e.target.value }) }}>
           <option value="dark">ダーク</option>
           <option value="light">ライト</option>
+        </select>
+      </label>
+      <label className="settings-label">
+        表示方向
+        <select value={direction} onChange={(e) => { setDirection(e.target.value); buildAndSend({ direction: e.target.value }) }}>
+          <option value="bottom">下から（デフォルト）</option>
+          <option value="top">上から</option>
         </select>
       </label>
     </div>

@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import type { PluginSettings, PluginSettingsMessage } from '../../../shared/types'
 
-const DEFAULTS = { fontSize: 28, theme: 'dark', duration: 60 }
+const DEFAULTS = { fontSize: 28, theme: 'dark', duration: 60, direction: 'top' }
 
 interface Props {
   pluginId: string
@@ -11,6 +11,7 @@ export function Settings({ pluginId }: Props) {
   const [fontSize, setFontSize] = useState(String(DEFAULTS.fontSize))
   const [theme, setTheme] = useState(DEFAULTS.theme)
   const [duration, setDuration] = useState(String(DEFAULTS.duration))
+  const [direction, setDirection] = useState(DEFAULTS.direction)
   const [ready, setReady] = useState(false)
 
   useEffect(() => {
@@ -21,6 +22,7 @@ export function Settings({ pluginId }: Props) {
         setFontSize(String(s.fontSize ?? DEFAULTS.fontSize))
         setTheme(String(s.theme ?? DEFAULTS.theme))
         setDuration(String(s.duration ?? DEFAULTS.duration))
+        setDirection(String(s.direction ?? DEFAULTS.direction))
         setReady(true)
       }
     }
@@ -39,27 +41,19 @@ export function Settings({ pluginId }: Props) {
     [pluginId]
   )
 
-  const handleFontSizeChange = (value: string) => {
-    setFontSize(value)
-    const settings: PluginSettings = { theme, duration: Number(duration) }
-    if (value) settings.fontSize = Number(value)
-    sendUpdate(settings)
-  }
-
-  const handleThemeChange = (value: string) => {
-    setTheme(value)
-    const settings: PluginSettings = { theme: value, duration: Number(duration) }
-    if (fontSize) settings.fontSize = Number(fontSize)
-    sendUpdate(settings)
-  }
-
-  const handleDurationChange = (value: string) => {
-    setDuration(value)
-    const settings: PluginSettings = { theme }
-    if (fontSize) settings.fontSize = Number(fontSize)
-    if (value) settings.duration = Number(value)
-    sendUpdate(settings)
-  }
+  const buildAndSend = useCallback(
+    (overrides: Partial<Record<string, string | number>>) => {
+      const settings: PluginSettings = {
+        fontSize: Number(fontSize),
+        theme,
+        duration: Number(duration),
+        direction,
+        ...overrides,
+      }
+      sendUpdate(settings)
+    },
+    [fontSize, theme, duration, direction, sendUpdate]
+  )
 
   if (!ready) return null
 
@@ -71,12 +65,15 @@ export function Settings({ pluginId }: Props) {
           type="number"
           min={1}
           value={fontSize}
-          onChange={(e) => handleFontSizeChange(e.target.value)}
+          onChange={(e) => {
+            setFontSize(e.target.value)
+            buildAndSend({ fontSize: Number(e.target.value) || undefined })
+          }}
         />
       </label>
       <label className="settings-label">
         テーマ
-        <select value={theme} onChange={(e) => handleThemeChange(e.target.value)}>
+        <select value={theme} onChange={(e) => { setTheme(e.target.value); buildAndSend({ theme: e.target.value }) }}>
           <option value="dark">ダーク</option>
           <option value="light">ライト</option>
         </select>
@@ -87,8 +84,18 @@ export function Settings({ pluginId }: Props) {
           type="number"
           min={1}
           value={duration}
-          onChange={(e) => handleDurationChange(e.target.value)}
+          onChange={(e) => {
+            setDuration(e.target.value)
+            buildAndSend({ duration: Number(e.target.value) || undefined })
+          }}
         />
+      </label>
+      <label className="settings-label">
+        表示方向
+        <select value={direction} onChange={(e) => { setDirection(e.target.value); buildAndSend({ direction: e.target.value }) }}>
+          <option value="top">上から（デフォルト）</option>
+          <option value="bottom">下から</option>
+        </select>
       </label>
     </div>
   )

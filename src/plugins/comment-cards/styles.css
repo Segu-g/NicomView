@@ -55,6 +55,10 @@ body {
   overflow: hidden;
 }
 
+[data-direction="bottom"] .card-container {
+  flex-direction: column-reverse;
+}
+
 /* --- Slot (height animation wrapper) --- */
 
 .card-slot {

@@ -124,17 +124,27 @@ export function CommentList() {
     onClear: useCallback(() => setComments([]), []),
   })
 
+  const isTopDirection = document.documentElement.dataset.direction === 'top'
+
   const handleScroll = useCallback(() => {
     const el = listRef.current
     if (!el) return
-    autoScrollRef.current = el.scrollHeight - el.scrollTop - el.clientHeight < SCROLL_THRESHOLD
-  }, [])
+    if (isTopDirection) {
+      autoScrollRef.current = el.scrollTop > -SCROLL_THRESHOLD
+    } else {
+      autoScrollRef.current = el.scrollHeight - el.scrollTop - el.clientHeight < SCROLL_THRESHOLD
+    }
+  }, [isTopDirection])
 
   useEffect(() => {
     if (autoScrollRef.current && listRef.current) {
-      listRef.current.scrollTop = listRef.current.scrollHeight
+      if (isTopDirection) {
+        listRef.current.scrollTop = 0
+      } else {
+        listRef.current.scrollTop = listRef.current.scrollHeight
+      }
     }
-  }, [comments])
+  }, [comments, isTopDirection])
 
   return (
     <div id="comment-list" ref={listRef} onScroll={handleScroll}>
