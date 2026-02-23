@@ -41,7 +41,8 @@ import type {
   PluginSettings,
   PluginSettingsMessage,
   TtsSettings,
-  TtsAdapterInfo
+  TtsAdapterInfo,
+  TtsAdapterParamDef
 } from '../../shared/types'
 import { ALL_EVENT_TYPES } from '../../shared/types'
 import EventFilter from './components/EventFilter'
@@ -95,6 +96,7 @@ function App(): JSX.Element {
   const iframeRefs = useRef<Record<string, HTMLIFrameElement | null>>({})
   const [ttsSettings, setTtsSettings] = useState<TtsSettings | null>(null)
   const [ttsAdapters, setTtsAdapters] = useState<TtsAdapterInfo[]>([])
+  const [ttsParamDefs, setTtsParamDefs] = useState<TtsAdapterParamDef[]>([])
   const [saveError, setSaveError] = useState<string | null>(null)
 
   useEffect(() => {
@@ -122,6 +124,11 @@ function App(): JSX.Element {
       }
       setPluginSettings(settings)
       setPluginsLoaded(true)
+
+      // 保存済みアダプターのパラメーター定義を読み込む
+      if (loadedTts.adapterId) {
+        window.commentViewerAPI.getTtsAdapterParams(loadedTts.adapterId).then(setTtsParamDefs)
+      }
     })
   }, [])
 
@@ -204,6 +211,15 @@ function App(): JSX.Element {
       setTtsSettings(updated)
       try {
         await window.commentViewerAPI.setTtsSettings(partial)
+        // アダプター変更時はパラメーター定義を再取得
+        if (partial.adapterId !== undefined) {
+          if (partial.adapterId) {
+            const defs = await window.commentViewerAPI.getTtsAdapterParams(partial.adapterId)
+            setTtsParamDefs(defs)
+          } else {
+            setTtsParamDefs([])
+          }
+        }
       } catch {
         setTtsSettings(prev)
         setSaveError('読み上げ設定の保存に失敗しました')
@@ -412,6 +428,79 @@ function App(): JSX.Element {
                       </MenuItem>
                     ))}
                   </Select>
+                </Box>
+              )}
+
+              {ttsParamDefs.length > 0 && (
+                <Box sx={{ mb: 2 }}>
+                  {ttsParamDefs.map((param) => {
+                    const value = ttsSettings.adapterSettings[param.key] ?? param.defaultValue
+                    if (param.type === 'select') {
+                      return (
+                        <Box key={param.key} sx={{ mb: 1 }}>
+                          <Typography variant="caption" color="text.secondary">
+                            {param.label}
+                          </Typography>
+                          <Select
+                            fullWidth
+                            size="small"
+                            value={value}
+                            onChange={(e) => {
+                              handleTtsChange({
+                                adapterSettings: { ...ttsSettings.adapterSettings, [param.key]: e.target.value }
+                              })
+                            }}
+                          >
+                            {(param.options ?? []).map((opt) => (
+                              <MenuItem key={opt.value} value={opt.value}>
+                                {opt.label}
+                              </MenuItem>
+                            ))}
+                          </Select>
+                          {param.options?.length === 0 && (
+                            <Typography variant="caption" color="text.secondary">
+                              エンジンが起動していません
+                            </Typography>
+                          )}
+                        </Box>
+                      )
+                    }
+                    if (param.type === 'number') {
+                      return (
+                        <Box key={param.key} sx={{ mb: 1 }}>
+                          <TextField
+                            fullWidth
+                            size="small"
+                            label={param.label}
+                            type="number"
+                            value={value}
+                            inputProps={{ min: param.min, max: param.max, step: param.step }}
+                            onChange={(e) => {
+                              handleTtsChange({
+                                adapterSettings: { ...ttsSettings.adapterSettings, [param.key]: Number(e.target.value) }
+                              })
+                            }}
+                          />
+                        </Box>
+                      )
+                    }
+                    // string
+                    return (
+                      <Box key={param.key} sx={{ mb: 1 }}>
+                        <TextField
+                          fullWidth
+                          size="small"
+                          label={param.label}
+                          value={value}
+                          onChange={(e) => {
+                            handleTtsChange({
+                              adapterSettings: { ...ttsSettings.adapterSettings, [param.key]: e.target.value }
+                            })
+                          }}
+                        />
+                      </Box>
+                    )
+                  })}
                 </Box>
               )}
 

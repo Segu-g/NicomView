@@ -54,7 +54,8 @@ beforeEach(() => {
     setTtsSettings: vi.fn<CommentViewerAPI['setTtsSettings']>().mockResolvedValue(undefined),
     getTtsAdapters: vi.fn<CommentViewerAPI['getTtsAdapters']>().mockResolvedValue([
       { id: 'voicevox', name: 'VOICEVOX', defaultSettings: { host: 'localhost', port: 50021, speakerId: 0 } }
-    ])
+    ]),
+    getTtsAdapterParams: vi.fn<CommentViewerAPI['getTtsAdapterParams']>().mockResolvedValue([])
   }
 })
 
