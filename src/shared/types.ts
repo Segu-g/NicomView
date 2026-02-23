@@ -36,6 +36,21 @@ export type PluginSettingsMessage =
   | { type: 'nicomview:settings-update'; pluginId: string; settings: PluginSettings }
   | { type: 'nicomview:settings-init'; settings: PluginSettings }
 
+export interface TtsSettings {
+  enabled: boolean
+  adapterId: string
+  enabledEvents: CommentEventType[]
+  speed: number
+  volume: number
+  adapterSettings: Record<string, string | number | boolean>
+}
+
+export interface TtsAdapterInfo {
+  id: string
+  name: string
+  defaultSettings: Record<string, string | number | boolean>
+}
+
 export interface CommentViewerAPI {
   connect(liveId: string, cookies?: string): Promise<void>
   disconnect(): Promise<void>
@@ -45,4 +60,7 @@ export interface CommentViewerAPI {
   setPluginPreferences(prefs: Partial<PluginPreferences>): Promise<void>
   getPluginSettings(pluginId: string): Promise<PluginSettings>
   setPluginSettings(pluginId: string, settings: PluginSettings): Promise<void>
+  getTtsSettings(): Promise<TtsSettings>
+  setTtsSettings(settings: Partial<TtsSettings>): Promise<void>
+  getTtsAdapters(): Promise<TtsAdapterInfo[]>
 }

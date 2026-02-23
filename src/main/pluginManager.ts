@@ -127,22 +127,18 @@ export class PluginManager {
           return raw as Record<string, PluginSettings>
         }
       }
-    } catch {
-      // Fall through to defaults
+    } catch (err) {
+      console.error('[PluginManager] Failed to load settings:', err)
     }
     return {}
   }
 
   private saveSettings(): void {
-    try {
-      const dir = path.dirname(this.settingsPath)
-      if (!fs.existsSync(dir)) {
-        fs.mkdirSync(dir, { recursive: true })
-      }
-      fs.writeFileSync(this.settingsPath, JSON.stringify(this.allSettings, null, 2), 'utf-8')
-    } catch {
-      // Silently fail on write errors
+    const dir = path.dirname(this.settingsPath)
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true })
     }
+    fs.writeFileSync(this.settingsPath, JSON.stringify(this.allSettings, null, 2), 'utf-8')
   }
 
   private loadPreferences(): PluginPreferences {
@@ -159,21 +155,17 @@ export class PluginManager {
             : defaults.enabledEvents
         }
       }
-    } catch {
-      // Fall through to defaults
+    } catch (err) {
+      console.error('[PluginManager] Failed to load preferences:', err)
     }
     return defaults
   }
 
   private savePreferences(): void {
-    try {
-      const dir = path.dirname(this.preferencesPath)
-      if (!fs.existsSync(dir)) {
-        fs.mkdirSync(dir, { recursive: true })
-      }
-      fs.writeFileSync(this.preferencesPath, JSON.stringify(this.preferences, null, 2), 'utf-8')
-    } catch {
-      // Silently fail on write errors
+    const dir = path.dirname(this.preferencesPath)
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true })
     }
+    fs.writeFileSync(this.preferencesPath, JSON.stringify(this.preferences, null, 2), 'utf-8')
   }
 }

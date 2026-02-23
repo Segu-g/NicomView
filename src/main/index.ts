@@ -4,12 +4,15 @@ import { NiconicoProvider } from 'nicomget'
 import { createServer, type CommentServer } from './server'
 import { CommentManager } from './commentManager'
 import { PluginManager } from './pluginManager'
-import type { PluginPreferences, PluginSettings } from '../shared/types'
+import { TtsManager } from './tts/ttsManager'
+import { VoicevoxAdapter } from './tts/adapters/voicevox'
+import type { CommentEventType, PluginPreferences, PluginSettings, TtsSettings } from '../shared/types'
 
 let mainWindow: BrowserWindow | null = null
 let server: CommentServer | null = null
 let commentManager: CommentManager | null = null
 let pluginManager: PluginManager | null = null
+let ttsManager: TtsManager | null = null
 
 function getBuiltInPluginsPath(): string {
   if (app.isPackaged) {
@@ -64,12 +67,17 @@ async function createWindow(): Promise<void> {
     ;(global as any).__testServer = server
   }
 
+  // TtsManager 初期化
+  ttsManager = new TtsManager(app.getPath('userData'))
+  ttsManager.registerAdapter(new VoicevoxAdapter())
+
   // CommentManager 初期化
   commentManager = new CommentManager(
     (options) => new NiconicoProvider(options),
     (event, data) => {
       console.log(`[${event}]`, JSON.stringify(data))
       server?.broadcast(event, data)
+      ttsManager?.handleEvent(event as CommentEventType, data)
     },
     (state) => mainWindow?.webContents.send('state-change', state)
   )
@@ -104,6 +112,18 @@ async function createWindow(): Promise<void> {
     pluginManager?.setPluginSettings(pluginId, settings)
   })
 
+  ipcMain.handle('get-tts-settings', () => {
+    return ttsManager?.getSettings() ?? null
+  })
+
+  ipcMain.handle('set-tts-settings', (_event, settings: Partial<TtsSettings>) => {
+    ttsManager?.setSettings(settings)
+  })
+
+  ipcMain.handle('get-tts-adapters', () => {
+    return ttsManager?.getAdapterInfos() ?? []
+  })
+
   // レンダラーのコンソールログをメインプロセスに転送（デバッグ用）
   mainWindow.webContents.on('console-message', (_event, level, message, line, sourceId) => {
     const prefix = ['LOG', 'WARN', 'ERROR'][level] || 'LOG'
@@ -126,6 +146,7 @@ app.whenReady().then(createWindow)
 
 app.on('window-all-closed', () => {
   commentManager?.disconnect()
+  ttsManager?.dispose()
   const cleanup = server ? server.close() : Promise.resolve()
   cleanup.finally(() => app.quit())
 })

@@ -17,7 +17,15 @@ import {
   Alert,
   List,
   ListItem,
-  ListItemText
+  ListItemText,
+  Switch,
+  FormControlLabel,
+  Select,
+  MenuItem,
+  Slider,
+  FormGroup,
+  Checkbox,
+  Snackbar
 } from '@mui/material'
 import {
   ContentCopy as CopyIcon,
@@ -27,10 +35,13 @@ import {
 } from '@mui/icons-material'
 import type {
   ConnectionState,
+  CommentEventType,
   PluginDescriptor,
   PluginPreferences,
   PluginSettings,
-  PluginSettingsMessage
+  PluginSettingsMessage,
+  TtsSettings,
+  TtsAdapterInfo
 } from '../../shared/types'
 import { ALL_EVENT_TYPES } from '../../shared/types'
 import EventFilter from './components/EventFilter'
@@ -82,6 +93,9 @@ function App(): JSX.Element {
   const [pluginSettings, setPluginSettings] = useState<Record<string, PluginSettings>>({})
   const [expandedPlugin, setExpandedPlugin] = useState<string | null>(null)
   const iframeRefs = useRef<Record<string, HTMLIFrameElement | null>>({})
+  const [ttsSettings, setTtsSettings] = useState<TtsSettings | null>(null)
+  const [ttsAdapters, setTtsAdapters] = useState<TtsAdapterInfo[]>([])
+  const [saveError, setSaveError] = useState<string | null>(null)
 
   useEffect(() => {
     const unsubscribe = window.commentViewerAPI.onStateChange((state: ConnectionState) => {
@@ -93,10 +107,14 @@ function App(): JSX.Element {
   useEffect(() => {
     Promise.all([
       window.commentViewerAPI.getPlugins(),
-      window.commentViewerAPI.getPluginPreferences()
-    ]).then(async ([loadedPlugins, loadedPrefs]) => {
+      window.commentViewerAPI.getPluginPreferences(),
+      window.commentViewerAPI.getTtsSettings(),
+      window.commentViewerAPI.getTtsAdapters()
+    ]).then(async ([loadedPlugins, loadedPrefs, loadedTts, loadedAdapters]) => {
       setPlugins(loadedPlugins)
       setPreferences(loadedPrefs)
+      setTtsSettings(loadedTts)
+      setTtsAdapters(loadedAdapters)
 
       const settings: Record<string, PluginSettings> = {}
       for (const p of loadedPlugins) {
@@ -126,7 +144,9 @@ function App(): JSX.Element {
       if (msg.type === 'nicomview:settings-update') {
         const { pluginId, settings } = msg
         setPluginSettings((prev) => ({ ...prev, [pluginId]: settings }))
-        window.commentViewerAPI.setPluginSettings(pluginId, settings)
+        window.commentViewerAPI.setPluginSettings(pluginId, settings).catch(() => {
+          setSaveError('プラグイン設定の保存に失敗しました')
+        })
       }
     }
     window.addEventListener('message', handler)
@@ -163,11 +183,33 @@ function App(): JSX.Element {
 
   const handlePreferencesChange = useCallback(
     async (partial: Partial<PluginPreferences>) => {
+      const prev = preferences
       const updated = { ...preferences, ...partial }
       setPreferences(updated)
-      await window.commentViewerAPI.setPluginPreferences(partial)
+      try {
+        await window.commentViewerAPI.setPluginPreferences(partial)
+      } catch {
+        setPreferences(prev)
+        setSaveError('表示イベント設定の保存に失敗しました')
+      }
     },
     [preferences]
+  )
+
+  const handleTtsChange = useCallback(
+    async (partial: Partial<TtsSettings>) => {
+      if (!ttsSettings) return
+      const prev = ttsSettings
+      const updated = { ...ttsSettings, ...partial }
+      setTtsSettings(updated)
+      try {
+        await window.commentViewerAPI.setTtsSettings(partial)
+      } catch {
+        setTtsSettings(prev)
+        setSaveError('読み上げ設定の保存に失敗しました')
+      }
+    },
+    [ttsSettings]
   )
 
   const toggleExpanded = useCallback((pluginId: string) => {
@@ -321,7 +363,7 @@ function App(): JSX.Element {
         </Card>
 
         {pluginsLoaded && (
-          <Card variant="outlined">
+          <Card variant="outlined" sx={{ mb: 3 }}>
             <CardContent>
               <Typography variant="subtitle2" color="text.secondary" gutterBottom>
                 表示イベント
@@ -333,7 +375,123 @@ function App(): JSX.Element {
             </CardContent>
           </Card>
         )}
+
+        {ttsSettings && (
+          <Card variant="outlined">
+            <CardContent>
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
+                <Typography variant="subtitle2" color="text.secondary">
+                  読み上げ設定
+                </Typography>
+                <Switch
+                  size="small"
+                  checked={ttsSettings.enabled}
+                  onChange={(e) => handleTtsChange({ enabled: e.target.checked })}
+                  inputProps={{ 'aria-label': '読み上げ有効' }}
+                />
+              </Box>
+
+              {ttsAdapters.length > 0 && (
+                <Box sx={{ mb: 2 }}>
+                  <Typography variant="caption" color="text.secondary">
+                    読み上げエンジン
+                  </Typography>
+                  <Select
+                    fullWidth
+                    size="small"
+                    value={ttsSettings.adapterId}
+                    onChange={(e) => handleTtsChange({ adapterId: e.target.value })}
+                    displayEmpty
+                  >
+                    <MenuItem value="" disabled>
+                      選択してください
+                    </MenuItem>
+                    {ttsAdapters.map((adapter) => (
+                      <MenuItem key={adapter.id} value={adapter.id}>
+                        {adapter.name}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </Box>
+              )}
+
+              <Box sx={{ mb: 2 }}>
+                <Typography variant="caption" color="text.secondary">
+                  読み上げ対象イベント
+                </Typography>
+                <FormGroup row>
+                  {ALL_EVENT_TYPES.map((eventType) => (
+                    <FormControlLabel
+                      key={eventType}
+                      control={
+                        <Checkbox
+                          size="small"
+                          checked={ttsSettings.enabledEvents.includes(eventType)}
+                          onChange={(e) => {
+                            const next = e.target.checked
+                              ? [...ttsSettings.enabledEvents, eventType]
+                              : ttsSettings.enabledEvents.filter((t: CommentEventType) => t !== eventType)
+                            handleTtsChange({ enabledEvents: next })
+                          }}
+                        />
+                      }
+                      label={
+                        {
+                          comment: 'コメント',
+                          gift: 'ギフト',
+                          emotion: 'エモーション',
+                          notification: '通知',
+                          operatorComment: '運営コメント'
+                        }[eventType]
+                      }
+                    />
+                  ))}
+                </FormGroup>
+              </Box>
+
+              <Box sx={{ mb: 1 }}>
+                <Typography variant="caption" color="text.secondary">
+                  速度: {ttsSettings.speed.toFixed(1)}
+                </Typography>
+                <Slider
+                  size="small"
+                  min={0.5}
+                  max={2.0}
+                  step={0.1}
+                  value={ttsSettings.speed}
+                  onChange={(_e, v) => setTtsSettings({ ...ttsSettings, speed: v as number })}
+                  onChangeCommitted={(_e, v) => handleTtsChange({ speed: v as number })}
+                />
+              </Box>
+
+              <Box>
+                <Typography variant="caption" color="text.secondary">
+                  音量: {ttsSettings.volume.toFixed(1)}
+                </Typography>
+                <Slider
+                  size="small"
+                  min={0}
+                  max={2.0}
+                  step={0.1}
+                  value={ttsSettings.volume}
+                  onChange={(_e, v) => setTtsSettings({ ...ttsSettings, volume: v as number })}
+                  onChangeCommitted={(_e, v) => handleTtsChange({ volume: v as number })}
+                />
+              </Box>
+            </CardContent>
+          </Card>
+        )}
       </Container>
+      <Snackbar
+        open={saveError !== null}
+        autoHideDuration={4000}
+        onClose={() => setSaveError(null)}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert severity="error" variant="filled" onClose={() => setSaveError(null)}>
+          {saveError}
+        </Alert>
+      </Snackbar>
     </ThemeProvider>
   )
 }

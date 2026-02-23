@@ -42,7 +42,19 @@ beforeEach(() => {
     }),
     setPluginPreferences: vi.fn<CommentViewerAPI['setPluginPreferences']>().mockResolvedValue(undefined),
     getPluginSettings: vi.fn<CommentViewerAPI['getPluginSettings']>().mockResolvedValue({}),
-    setPluginSettings: vi.fn<CommentViewerAPI['setPluginSettings']>().mockResolvedValue(undefined)
+    setPluginSettings: vi.fn<CommentViewerAPI['setPluginSettings']>().mockResolvedValue(undefined),
+    getTtsSettings: vi.fn<CommentViewerAPI['getTtsSettings']>().mockResolvedValue({
+      enabled: false,
+      adapterId: '',
+      enabledEvents: ['comment', 'gift', 'emotion', 'notification', 'operatorComment'],
+      speed: 1,
+      volume: 1,
+      adapterSettings: {}
+    }),
+    setTtsSettings: vi.fn<CommentViewerAPI['setTtsSettings']>().mockResolvedValue(undefined),
+    getTtsAdapters: vi.fn<CommentViewerAPI['getTtsAdapters']>().mockResolvedValue([
+      { id: 'voicevox', name: 'VOICEVOX', defaultSettings: { host: 'localhost', port: 50021, speakerId: 0 } }
+    ])
   }
 })
 
