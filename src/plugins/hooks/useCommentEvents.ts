@@ -46,6 +46,7 @@ export interface CommentEventHandlers {
   onNotification?: (data: NotificationData) => void
   onOperatorComment?: (data: OperatorCommentData) => void
   onEmotion?: (data: EmotionData) => void
+  onClear?: () => void
 }
 
 const EVENT_TO_HANDLER: Record<CommentEventType, keyof CommentEventHandlers> = {
@@ -59,13 +60,16 @@ const EVENT_TO_HANDLER: Record<CommentEventType, keyof CommentEventHandlers> = {
 export function useCommentEvents(handlers: CommentEventHandlers): void {
   const handleMessage = useCallback(
     (event: string, data: unknown) => {
+      if (event === 'clear') {
+        handlers.onClear?.()
+        return
+      }
       const handlerKey = EVENT_TO_HANDLER[event as CommentEventType]
       if (!handlerKey) return
       const handler = handlers[handlerKey] as ((data: unknown) => void) | undefined
       handler?.(data)
     },
-    // handlers is an object literal created each render — depend on individual callbacks
-    [handlers.onComment, handlers.onGift, handlers.onNotification, handlers.onOperatorComment, handlers.onEmotion],
+    [handlers.onComment, handlers.onGift, handlers.onNotification, handlers.onOperatorComment, handlers.onEmotion, handlers.onClear],
   )
 
   useWebSocket(WS_URL, handleMessage)

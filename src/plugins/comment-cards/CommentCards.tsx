@@ -101,6 +101,12 @@ export function CommentCards() {
         type: 'emotion',
       }, data.isHistory)
     }, [pushCard]),
+
+    onClear: useCallback(() => {
+      timersRef.current.forEach((timer) => clearTimeout(timer))
+      timersRef.current.clear()
+      setCards([])
+    }, []),
   })
 
   const handleAnimationEnd = useCallback(

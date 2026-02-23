@@ -76,6 +76,7 @@ async function createWindow(): Promise<void> {
 
   // IPC ハンドラ
   ipcMain.handle('connect', async (_event, liveId: string, cookies?: string) => {
+    server?.clearHistory()
     await commentManager?.connect(liveId, cookies)
   })
 

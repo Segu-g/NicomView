@@ -4,6 +4,7 @@ import http from 'http'
 
 export interface CommentServer {
   broadcast(event: string, data: unknown): void
+  clearHistory(): void
   registerPluginRoute(pluginId: string, fsPath: string): void
   close(): Promise<void>
 }
@@ -56,6 +57,16 @@ export async function createServer(options: ServerOptions = {}): Promise<Comment
     }
   }
 
+  function clearHistory(): void {
+    historyBuffer.length = 0
+    const message = JSON.stringify({ event: 'clear', data: {} })
+    for (const client of wss.clients) {
+      if (client.readyState === WebSocket.OPEN) {
+        client.send(message)
+      }
+    }
+  }
+
   function registerPluginRoute(pluginId: string, fsPath: string): void {
     pluginIds.push(pluginId)
     app.use(`/plugins/${pluginId}`, express.static(fsPath))
@@ -79,5 +90,5 @@ export async function createServer(options: ServerOptions = {}): Promise<Comment
     })
   }
 
-  return { broadcast, registerPluginRoute, close }
+  return { broadcast, clearHistory, registerPluginRoute, close }
 }

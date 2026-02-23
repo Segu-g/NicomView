@@ -121,6 +121,7 @@ export function CommentList() {
     onNotification: useCallback((data: NotificationData) => addEntry('notification', data), [addEntry]),
     onOperatorComment: useCallback((data: OperatorCommentData) => addEntry('operatorComment', data), [addEntry]),
     onEmotion: useCallback((data: EmotionData) => addEntry('emotion', data), [addEntry]),
+    onClear: useCallback(() => setComments([]), []),
   })
 
   const handleScroll = useCallback(() => {
