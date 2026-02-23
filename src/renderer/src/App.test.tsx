@@ -24,7 +24,8 @@ beforeEach(() => {
         version: '1.0.0',
         overlay: true,
         builtIn: true,
-        basePath: '/plugins/comment-list'
+        basePath: '/plugins/comment-list',
+        settings: true
       },
       {
         id: 'comment-cards',
@@ -32,13 +33,16 @@ beforeEach(() => {
         version: '1.0.0',
         overlay: true,
         builtIn: true,
-        basePath: '/plugins/comment-cards'
+        basePath: '/plugins/comment-cards',
+        settings: true
       }
     ]),
     getPluginPreferences: vi.fn<CommentViewerAPI['getPluginPreferences']>().mockResolvedValue({
       enabledEvents: ['comment', 'gift', 'emotion', 'notification', 'operatorComment']
     }),
-    setPluginPreferences: vi.fn<CommentViewerAPI['setPluginPreferences']>().mockResolvedValue(undefined)
+    setPluginPreferences: vi.fn<CommentViewerAPI['setPluginPreferences']>().mockResolvedValue(undefined),
+    getPluginSettings: vi.fn<CommentViewerAPI['getPluginSettings']>().mockResolvedValue({}),
+    setPluginSettings: vi.fn<CommentViewerAPI['setPluginSettings']>().mockResolvedValue(undefined)
   }
 })
 
@@ -123,6 +127,101 @@ describe('App', () => {
       })
       await user.click(screen.getByRole('button', { name: '切断' }))
       expect(window.commentViewerAPI.disconnect).toHaveBeenCalled()
+    })
+  })
+
+  describe('プラグイン設定', () => {
+    it('設定ボタンが表示される', async () => {
+      render(<App />)
+      await screen.findByText('コメントリスト')
+      expect(screen.getByTestId('settings-toggle-comment-list')).toBeInTheDocument()
+      expect(screen.getByTestId('settings-toggle-comment-cards')).toBeInTheDocument()
+    })
+
+    it('設定ボタンをクリックするとiframeが表示される', async () => {
+      render(<App />)
+      const user = userEvent.setup()
+      await screen.findByText('コメントリスト')
+      await user.click(screen.getByTestId('settings-toggle-comment-list'))
+      expect(screen.getByTestId('settings-iframe-comment-list')).toBeInTheDocument()
+    })
+
+    it('settings:falseのプラグインには設定ボタンが表示されない', async () => {
+      window.commentViewerAPI.getPlugins = vi.fn().mockResolvedValue([
+        {
+          id: 'no-settings',
+          name: 'No Settings Plugin',
+          version: '1.0.0',
+          overlay: true,
+          builtIn: true,
+          basePath: '/plugins/no-settings'
+        }
+      ])
+      render(<App />)
+      await screen.findByText('No Settings Plugin')
+      expect(screen.queryByTestId('settings-toggle-no-settings')).not.toBeInTheDocument()
+    })
+
+    it('postMessageでsettings-updateを受信するとURLが更新される', async () => {
+      render(<App />)
+      await screen.findByText('コメントリスト')
+
+      await act(async () => {
+        window.dispatchEvent(
+          new MessageEvent('message', {
+            data: {
+              type: 'nicomview:settings-update',
+              pluginId: 'comment-list',
+              settings: { fontSize: 32, theme: 'light' }
+            }
+          })
+        )
+      })
+
+      expect(
+        screen.getByText('http://localhost:3939/plugins/comment-list/overlay/?fontSize=32&theme=light')
+      ).toBeInTheDocument()
+    })
+
+    it('settings-update時にsetPluginSettingsが呼ばれる', async () => {
+      render(<App />)
+      await screen.findByText('コメントリスト')
+
+      await act(async () => {
+        window.dispatchEvent(
+          new MessageEvent('message', {
+            data: {
+              type: 'nicomview:settings-update',
+              pluginId: 'comment-list',
+              settings: { fontSize: 32 }
+            }
+          })
+        )
+      })
+
+      expect(window.commentViewerAPI.setPluginSettings).toHaveBeenCalledWith(
+        'comment-list',
+        { fontSize: 32 }
+      )
+    })
+
+    it('起動時にgetPluginSettingsが全プラグインに対して呼ばれる', async () => {
+      render(<App />)
+      await screen.findByText('コメントリスト')
+      expect(window.commentViewerAPI.getPluginSettings).toHaveBeenCalledWith('comment-list')
+      expect(window.commentViewerAPI.getPluginSettings).toHaveBeenCalledWith('comment-cards')
+    })
+
+    it('保存済み設定がURLに反映される', async () => {
+      window.commentViewerAPI.getPluginSettings = vi.fn().mockImplementation((id: string) => {
+        if (id === 'comment-list') return Promise.resolve({ fontSize: 24, theme: 'light' })
+        return Promise.resolve({})
+      })
+
+      render(<App />)
+      expect(
+        await screen.findByText('http://localhost:3939/plugins/comment-list/overlay/?fontSize=24&theme=light')
+      ).toBeInTheDocument()
     })
   })
 })

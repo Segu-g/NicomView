@@ -4,11 +4,13 @@ import type {
   PluginManifest,
   PluginDescriptor,
   PluginPreferences,
+  PluginSettings,
   CommentEventType
 } from '../shared/types'
 import { ALL_EVENT_TYPES } from '../shared/types'
 
 const PREFERENCES_FILE = 'plugin-preferences.json'
+const SETTINGS_FILE = 'plugin-settings.json'
 
 function isValidManifest(obj: unknown): obj is PluginManifest {
   if (typeof obj !== 'object' || obj === null) return false
@@ -30,6 +32,8 @@ export class PluginManager {
   private plugins: Map<string, PluginDescriptor> = new Map()
   private preferences: PluginPreferences
   private preferencesPath: string
+  private settingsPath: string
+  private allSettings: Record<string, PluginSettings>
   private builtInDir: string
   private externalDir: string
 
@@ -37,7 +41,9 @@ export class PluginManager {
     this.builtInDir = builtInDir
     this.externalDir = externalDir
     this.preferencesPath = path.join(userDataDir, PREFERENCES_FILE)
+    this.settingsPath = path.join(userDataDir, SETTINGS_FILE)
     this.preferences = this.loadPreferences()
+    this.allSettings = this.loadSettings()
   }
 
   discover(): void {
@@ -96,12 +102,47 @@ export class PluginManager {
     this.savePreferences()
   }
 
+  getPluginSettings(id: string): PluginSettings {
+    return { ...(this.allSettings[id] ?? {}) }
+  }
+
+  setPluginSettings(id: string, settings: PluginSettings): void {
+    this.allSettings[id] = { ...settings }
+    this.saveSettings()
+  }
+
   getPluginFsPath(id: string): string | undefined {
     const plugin = this.plugins.get(id)
     if (!plugin) return undefined
 
     const dir = plugin.builtIn ? this.builtInDir : this.externalDir
     return path.join(dir, id)
+  }
+
+  private loadSettings(): Record<string, PluginSettings> {
+    try {
+      if (fs.existsSync(this.settingsPath)) {
+        const raw = JSON.parse(fs.readFileSync(this.settingsPath, 'utf-8'))
+        if (typeof raw === 'object' && raw !== null) {
+          return raw as Record<string, PluginSettings>
+        }
+      }
+    } catch {
+      // Fall through to defaults
+    }
+    return {}
+  }
+
+  private saveSettings(): void {
+    try {
+      const dir = path.dirname(this.settingsPath)
+      if (!fs.existsSync(dir)) {
+        fs.mkdirSync(dir, { recursive: true })
+      }
+      fs.writeFileSync(this.settingsPath, JSON.stringify(this.allSettings, null, 2), 'utf-8')
+    } catch {
+      // Silently fail on write errors
+    }
   }
 
   private loadPreferences(): PluginPreferences {

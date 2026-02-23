@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import {
   ThemeProvider,
   createTheme,
@@ -17,21 +17,20 @@ import {
   Alert,
   List,
   ListItem,
-  ListItemText,
-  ToggleButton,
-  ToggleButtonGroup
+  ListItemText
 } from '@mui/material'
 import {
   ContentCopy as CopyIcon,
   ExpandMore as ExpandMoreIcon,
   ExpandLess as ExpandLessIcon,
-  DarkMode as DarkModeIcon,
-  LightMode as LightModeIcon
+  Settings as SettingsIcon
 } from '@mui/icons-material'
 import type {
   ConnectionState,
   PluginDescriptor,
-  PluginPreferences
+  PluginPreferences,
+  PluginSettings,
+  PluginSettingsMessage
 } from '../../shared/types'
 import { ALL_EVENT_TYPES } from '../../shared/types'
 import EventFilter from './components/EventFilter'
@@ -80,8 +79,9 @@ function App(): JSX.Element {
   const [plugins, setPlugins] = useState<PluginDescriptor[]>([])
   const [preferences, setPreferences] = useState<PluginPreferences>(defaultPreferences)
   const [pluginsLoaded, setPluginsLoaded] = useState(false)
-  const [fontSizes, setFontSizes] = useState<Record<string, string>>({})
-  const [pluginTheme, setPluginTheme] = useState<'dark' | 'light'>('dark')
+  const [pluginSettings, setPluginSettings] = useState<Record<string, PluginSettings>>({})
+  const [expandedPlugin, setExpandedPlugin] = useState<string | null>(null)
+  const iframeRefs = useRef<Record<string, HTMLIFrameElement | null>>({})
 
   useEffect(() => {
     const unsubscribe = window.commentViewerAPI.onStateChange((state: ConnectionState) => {
@@ -94,12 +94,44 @@ function App(): JSX.Element {
     Promise.all([
       window.commentViewerAPI.getPlugins(),
       window.commentViewerAPI.getPluginPreferences()
-    ]).then(([loadedPlugins, loadedPrefs]) => {
+    ]).then(async ([loadedPlugins, loadedPrefs]) => {
       setPlugins(loadedPlugins)
       setPreferences(loadedPrefs)
+
+      const settings: Record<string, PluginSettings> = {}
+      for (const p of loadedPlugins) {
+        settings[p.id] = await window.commentViewerAPI.getPluginSettings(p.id)
+      }
+      setPluginSettings(settings)
       setPluginsLoaded(true)
     })
   }, [])
+
+  // postMessage listener
+  useEffect(() => {
+    const handler = (e: MessageEvent) => {
+      const msg = e.data as PluginSettingsMessage
+      if (!msg?.type) return
+
+      if (msg.type === 'nicomview:ready') {
+        const { pluginId } = msg
+        const settings = pluginSettings[pluginId] ?? {}
+        const iframe = iframeRefs.current[pluginId]
+        iframe?.contentWindow?.postMessage(
+          { type: 'nicomview:settings-init', settings } satisfies PluginSettingsMessage,
+          '*'
+        )
+      }
+
+      if (msg.type === 'nicomview:settings-update') {
+        const { pluginId, settings } = msg
+        setPluginSettings((prev) => ({ ...prev, [pluginId]: settings }))
+        window.commentViewerAPI.setPluginSettings(pluginId, settings)
+      }
+    }
+    window.addEventListener('message', handler)
+    return () => window.removeEventListener('message', handler)
+  }, [pluginSettings])
 
   const handleConnect = useCallback(async () => {
     if (!liveId.trim()) return
@@ -113,12 +145,15 @@ function App(): JSX.Element {
   const buildPluginUrl = useCallback((pluginId: string) => {
     const base = `${BASE_URL}/plugins/${pluginId}/overlay/`
     const params = new URLSearchParams()
-    const fs = fontSizes[pluginId]
-    if (fs) params.set('fontSize', fs)
-    if (pluginTheme !== 'dark') params.set('theme', pluginTheme)
+    const settings = pluginSettings[pluginId]
+    if (settings) {
+      for (const [key, value] of Object.entries(settings)) {
+        if (value !== '' && value != null) params.set(key, String(value))
+      }
+    }
     const qs = params.toString()
     return qs ? `${base}?${qs}` : base
-  }, [fontSizes, pluginTheme])
+  }, [pluginSettings])
 
   const handleCopyUrl = useCallback(async (pluginId: string) => {
     await navigator.clipboard.writeText(buildPluginUrl(pluginId))
@@ -134,6 +169,10 @@ function App(): JSX.Element {
     },
     [preferences]
   )
+
+  const toggleExpanded = useCallback((pluginId: string) => {
+    setExpandedPlugin((prev) => (prev === pluginId ? null : pluginId))
+  }, [])
 
   const isConnected = connectionState === 'connected'
   const isConnecting = connectionState === 'connecting'
@@ -228,53 +267,53 @@ function App(): JSX.Element {
             <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
               以下のURLをOBSブラウザソースやブラウザで開くとコメントが表示されます
             </Typography>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
-              <Typography variant="body2" color="text.secondary">
-                テーマ
-              </Typography>
-              <ToggleButtonGroup
-                value={pluginTheme}
-                exclusive
-                onChange={(_e, value) => { if (value) setPluginTheme(value) }}
-                size="small"
-              >
-                <ToggleButton value="dark">
-                  <DarkModeIcon sx={{ fontSize: 16, mr: 0.5 }} />
-                  ダーク
-                </ToggleButton>
-                <ToggleButton value="light">
-                  <LightModeIcon sx={{ fontSize: 16, mr: 0.5 }} />
-                  ライト
-                </ToggleButton>
-              </ToggleButtonGroup>
-            </Box>
             <List dense disablePadding>
               {plugins.filter((p) => p.overlay).map((plugin) => (
-                <ListItem key={plugin.id} sx={{ px: 0, flexWrap: 'wrap' }}>
-                  <ListItemText
-                    primary={plugin.name}
-                    secondary={buildPluginUrl(plugin.id)}
-                    secondaryTypographyProps={{ fontFamily: 'monospace', fontSize: 12 }}
-                  />
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                    <TextField
-                      size="small"
-                      label="fontSize"
-                      type="number"
-                      placeholder={plugin.defaultFontSize != null ? String(plugin.defaultFontSize) : ''}
-                      value={fontSizes[plugin.id] ?? ''}
-                      onChange={(e) =>
-                        setFontSizes((prev) => ({ ...prev, [plugin.id]: e.target.value }))
-                      }
-                      slotProps={{ htmlInput: { min: 1 } }}
-                      sx={{ width: 100 }}
+                <ListItem key={plugin.id} sx={{ px: 0, flexDirection: 'column', alignItems: 'stretch' }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                    <ListItemText
+                      primary={plugin.name}
+                      secondary={buildPluginUrl(plugin.id)}
+                      secondaryTypographyProps={{ fontFamily: 'monospace', fontSize: 12 }}
                     />
-                    <Tooltip title={copiedId === plugin.id ? 'コピーしました' : 'URLをコピー'}>
-                      <IconButton onClick={() => handleCopyUrl(plugin.id)} size="small">
-                        <CopyIcon fontSize="small" />
-                      </IconButton>
-                    </Tooltip>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                      {plugin.settings && (
+                        <Tooltip title="設定">
+                          <IconButton
+                            onClick={() => toggleExpanded(plugin.id)}
+                            size="small"
+                            data-testid={`settings-toggle-${plugin.id}`}
+                          >
+                            <SettingsIcon fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
+                      )}
+                      <Tooltip title={copiedId === plugin.id ? 'コピーしました' : 'URLをコピー'}>
+                        <IconButton onClick={() => handleCopyUrl(plugin.id)} size="small">
+                          <CopyIcon fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+                    </Box>
                   </Box>
+                  {plugin.settings && (
+                    <Collapse in={expandedPlugin === plugin.id}>
+                      <Box sx={{ mt: 1, mb: 1 }}>
+                        <iframe
+                          ref={(el) => { iframeRefs.current[plugin.id] = el }}
+                          src={`${BASE_URL}/plugins/${plugin.id}/settings/?pluginId=${plugin.id}`}
+                          title={`${plugin.name} 設定`}
+                          data-testid={`settings-iframe-${plugin.id}`}
+                          style={{
+                            width: '100%',
+                            height: 160,
+                            border: 'none',
+                            borderRadius: 8,
+                            background: '#1e1e1e'
+                          }}
+                        />
+                      </Box>
+                    </Collapse>
+                  )}
                 </ListItem>
               ))}
             </List>

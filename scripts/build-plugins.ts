@@ -1,5 +1,6 @@
 import { build } from 'vite'
 import react from '@vitejs/plugin-react'
+import { existsSync } from 'fs'
 import { resolve } from 'path'
 
 const rootDir = resolve(import.meta.dirname, '..')
@@ -19,6 +20,24 @@ async function buildPlugins() {
       },
     })
     console.log(`Done: ${pluginId}`)
+
+    const settingsHtml = resolve(rootDir, 'src/plugins', pluginId, 'settings.html')
+    if (existsSync(settingsHtml)) {
+      console.log(`\nBuilding settings: ${pluginId}`)
+      await build({
+        root: resolve(rootDir, 'src/plugins', pluginId),
+        base: './',
+        plugins: [react()],
+        build: {
+          outDir: resolve(rootDir, 'resources/plugins', pluginId, 'settings'),
+          emptyOutDir: true,
+          rollupOptions: {
+            input: settingsHtml,
+          },
+        },
+      })
+      console.log(`Done settings: ${pluginId}`)
+    }
   }
 }
 

@@ -10,6 +10,8 @@ export const ALL_EVENT_TYPES: CommentEventType[] = [
   'operatorComment'
 ]
 
+export type PluginSettings = Record<string, string | number | boolean>
+
 export interface PluginManifest {
   id: string
   name: string
@@ -17,6 +19,7 @@ export interface PluginManifest {
   description?: string
   overlay: boolean
   defaultFontSize?: number
+  settings?: boolean
 }
 
 export interface PluginDescriptor extends PluginManifest {
@@ -28,6 +31,11 @@ export interface PluginPreferences {
   enabledEvents: CommentEventType[]
 }
 
+export type PluginSettingsMessage =
+  | { type: 'nicomview:ready'; pluginId: string }
+  | { type: 'nicomview:settings-update'; pluginId: string; settings: PluginSettings }
+  | { type: 'nicomview:settings-init'; settings: PluginSettings }
+
 export interface CommentViewerAPI {
   connect(liveId: string, cookies?: string): Promise<void>
   disconnect(): Promise<void>
@@ -35,4 +43,6 @@ export interface CommentViewerAPI {
   getPlugins(): Promise<PluginDescriptor[]>
   getPluginPreferences(): Promise<PluginPreferences>
   setPluginPreferences(prefs: Partial<PluginPreferences>): Promise<void>
+  getPluginSettings(pluginId: string): Promise<PluginSettings>
+  setPluginSettings(pluginId: string, settings: PluginSettings): Promise<void>
 }

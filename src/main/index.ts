@@ -4,7 +4,7 @@ import { NiconicoProvider } from 'nicomget'
 import { createServer, type CommentServer } from './server'
 import { CommentManager } from './commentManager'
 import { PluginManager } from './pluginManager'
-import type { PluginPreferences } from '../shared/types'
+import type { PluginPreferences, PluginSettings } from '../shared/types'
 
 let mainWindow: BrowserWindow | null = null
 let server: CommentServer | null = null
@@ -93,6 +93,14 @@ async function createWindow(): Promise<void> {
 
   ipcMain.handle('set-plugin-preferences', (_event, prefs: Partial<PluginPreferences>) => {
     pluginManager?.setPreferences(prefs)
+  })
+
+  ipcMain.handle('get-plugin-settings', (_event, pluginId: string) => {
+    return pluginManager?.getPluginSettings(pluginId) ?? {}
+  })
+
+  ipcMain.handle('set-plugin-settings', (_event, pluginId: string, settings: PluginSettings) => {
+    pluginManager?.setPluginSettings(pluginId, settings)
   })
 
   // レンダラーのコンソールログをメインプロセスに転送（デバッグ用）

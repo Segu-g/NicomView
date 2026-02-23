@@ -3,6 +3,7 @@ import type {
   ConnectionState,
   PluginDescriptor,
   PluginPreferences,
+  PluginSettings,
   CommentViewerAPI
 } from '../shared/types'
 
@@ -35,6 +36,14 @@ const api: CommentViewerAPI = {
 
   setPluginPreferences(prefs: Partial<PluginPreferences>): Promise<void> {
     return ipcRenderer.invoke('set-plugin-preferences', prefs)
+  },
+
+  getPluginSettings(pluginId: string): Promise<PluginSettings> {
+    return ipcRenderer.invoke('get-plugin-settings', pluginId)
+  },
+
+  setPluginSettings(pluginId: string, settings: PluginSettings): Promise<void> {
+    return ipcRenderer.invoke('set-plugin-settings', pluginId, settings)
   }
 }
 
