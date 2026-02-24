@@ -7,6 +7,7 @@
 ```
 [ニコニコ生放送] → [nicomget] → [CommentManager] → [WebSocket :3940] → [プラグインオーバーレイ]
                                                    → [Express :3939]  → プラグイン静的配信
+                                                   → [TtsManager]     → 音声読み上げ
 [設定 UI (React)] ←→ [IPC] ←→ [Electron メインプロセス] ←→ [PluginManager]
 ```
 
@@ -67,6 +68,25 @@ my-plugin/
 
 オーバーレイは WebSocket (`ws://localhost:3940`) に接続し、JSON メッセージ `{ "event": "comment", "data": { ... } }` を受信してコメントを描画する。
 
+## 読み上げ (TTS)
+
+コメントやギフトなどのイベントを音声で読み上げる機能。設定 UI の「読み上げ設定」で有効化・設定できる。
+
+### 対応エンジン
+
+| エンジン | 接続先 | 備考 |
+|---|---|---|
+| VOICEVOX | `http://localhost:50021` | キャラクター選択・イベント別キャラ上書き対応 |
+| 棒読みちゃん | `http://localhost:50080` | RemoteTalk HTTP API 経由 |
+
+### 設定項目
+
+- **エンジン設定** — 読み上げエンジンの選択とエンジン固有パラメータ（キャラクターなど）
+- **イベント設定** — 読み上げ対象イベントの選択、テンプレート編集、イベント別キャラクター上書き
+- **音声調整** — 速度（0.5–2.0）・音量（0–2.0）
+
+テンプレートではプレースホルダーが使用可能（例: `{userName}さん、{content}`）。設定は `userData/tts-settings.json` に永続化される。
+
 ## 技術スタック
 
 | 役割 | 技術 |
@@ -115,12 +135,20 @@ src/
 │   ├── index.ts                  # Electron メインプロセス
 │   ├── server.ts                 # Express + WebSocket サーバー
 │   ├── commentManager.ts         # nicomget 接続管理
-│   └── pluginManager.ts          # プラグイン探索・設定管理
+│   ├── pluginManager.ts          # プラグイン探索・設定管理
+│   └── tts/
+│       ├── ttsManager.ts         # TTS オーケストレーター・設定管理
+│       ├── queue.ts              # 読み上げキュー（逐次再生・上限 30）
+│       ├── formatter.ts          # イベント → テキスト変換
+│       ├── types.ts              # TtsAdapter インターフェース
+│       └── adapters/
+│           ├── voicevox.ts       # VOICEVOX アダプター
+│           └── bouyomichan.ts    # 棒読みちゃんアダプター
 ├── preload/
 │   └── index.ts                  # contextBridge (IPC ブリッジ)
 └── renderer/
     └── src/
-        ├── App.tsx               # 設定 UI（接続・プラグインURL・イベントフィルタ）
+        ├── App.tsx               # 設定 UI（接続・プラグインURL・イベントフィルタ・TTS）
         ├── main.tsx              # React エントリーポイント
         └── components/
             └── EventFilter.tsx   # イベントフィルタ UI
@@ -177,6 +205,7 @@ git push --tags
 
 - Node.js >= 18
 - ポート 3939, 3940 が未使用であること
+- TTS を使う場合: VOICEVOX または棒読みちゃんが起動していること
 
 ## ライセンス
 
