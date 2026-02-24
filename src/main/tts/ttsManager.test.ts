@@ -3,6 +3,7 @@ import fs from 'fs'
 import path from 'path'
 import os from 'os'
 import { TtsManager } from './ttsManager'
+import { DEFAULT_TTS_TEMPLATES } from '../../shared/types'
 import type { TtsAdapter } from './types'
 
 function createMockAdapter(id = 'mock', name = 'Mock'): TtsAdapter {
@@ -10,7 +11,7 @@ function createMockAdapter(id = 'mock', name = 'Mock'): TtsAdapter {
     id,
     name,
     defaultSettings: { host: 'localhost', port: 50021 },
-    speak: vi.fn<(text: string, speed: number, volume: number) => Promise<void>>().mockResolvedValue(undefined),
+    speak: vi.fn<(text: string, speed: number, volume: number, speakerOverride?: number | string) => Promise<void>>().mockResolvedValue(undefined),
     isAvailable: vi.fn<() => Promise<boolean>>().mockResolvedValue(true),
     getParamDefs: vi.fn().mockResolvedValue([
       { key: 'host', label: 'ホスト', type: 'string', defaultValue: 'localhost' },
@@ -115,7 +116,7 @@ describe('TtsManager', () => {
     manager.handleEvent('comment', { content: 'こんにちは' })
 
     await vi.waitFor(() => {
-      expect(adapter.speak).toHaveBeenCalledWith('こんにちは', 1, 1)
+      expect(adapter.speak).toHaveBeenCalledWith('こんにちは', 1, 1, undefined)
     })
   })
 
@@ -178,13 +179,115 @@ describe('TtsManager', () => {
 
     manager.handleEvent('comment', { content: 'Aに送信' })
     await vi.waitFor(() => {
-      expect(adapterA.speak).toHaveBeenCalledWith('Aに送信', 1, 1)
+      expect(adapterA.speak).toHaveBeenCalledWith('Aに送信', 1, 1, undefined)
     })
 
     manager.setSettings({ adapterId: 'b' })
     manager.handleEvent('comment', { content: 'Bに送信' })
     await vi.waitFor(() => {
-      expect(adapterB.speak).toHaveBeenCalledWith('Bに送信', 1, 1)
+      expect(adapterB.speak).toHaveBeenCalledWith('Bに送信', 1, 1, undefined)
+    })
+  })
+
+  it('初期設定で formatTemplates がデフォルト値を持つ', () => {
+    const settings = manager.getSettings()
+    expect(settings.formatTemplates).toEqual(DEFAULT_TTS_TEMPLATES)
+  })
+
+  it('setSettings で formatTemplates を変更して永続化できる', () => {
+    manager.setSettings({
+      formatTemplates: { ...DEFAULT_TTS_TEMPLATES, comment: '{userName}さん、{content}' }
+    })
+
+    const settings = manager.getSettings()
+    expect(settings.formatTemplates.comment).toBe('{userName}さん、{content}')
+    expect(settings.formatTemplates.gift).toBe(DEFAULT_TTS_TEMPLATES.gift)
+
+    const saved = JSON.parse(fs.readFileSync(path.join(tmpDir, 'tts-settings.json'), 'utf-8'))
+    expect(saved.formatTemplates.comment).toBe('{userName}さん、{content}')
+  })
+
+  it('formatTemplates が設定ファイルから復元される', () => {
+    manager.setSettings({
+      formatTemplates: { ...DEFAULT_TTS_TEMPLATES, gift: '{userName}からギフト' }
+    })
+
+    const manager2 = new TtsManager(tmpDir)
+    const settings = manager2.getSettings()
+    expect(settings.formatTemplates.gift).toBe('{userName}からギフト')
+    expect(settings.formatTemplates.comment).toBe(DEFAULT_TTS_TEMPLATES.comment)
+    manager2.dispose()
+  })
+
+  it('handleEvent がカスタムテンプレートを使って読み上げる', async () => {
+    const adapter = createMockAdapter()
+    manager.registerAdapter(adapter)
+    manager.setSettings({
+      enabled: true,
+      adapterId: 'mock',
+      formatTemplates: { ...DEFAULT_TTS_TEMPLATES, comment: '{userName}さん、{content}' }
+    })
+
+    manager.handleEvent('comment', { userName: 'たろう', content: 'こんにちは' })
+
+    await vi.waitFor(() => {
+      expect(adapter.speak).toHaveBeenCalledWith('たろうさん、こんにちは', 1, 1, undefined)
+    })
+  })
+
+  it('初期設定で speakerOverrides が空オブジェクトである', () => {
+    const settings = manager.getSettings()
+    expect(settings.speakerOverrides).toEqual({})
+  })
+
+  it('setSettings で speakerOverrides を変更して永続化できる', () => {
+    manager.setSettings({ speakerOverrides: { comment: 3, gift: 5 } })
+
+    const settings = manager.getSettings()
+    expect(settings.speakerOverrides).toEqual({ comment: 3, gift: 5 })
+
+    const saved = JSON.parse(fs.readFileSync(path.join(tmpDir, 'tts-settings.json'), 'utf-8'))
+    expect(saved.speakerOverrides).toEqual({ comment: 3, gift: 5 })
+  })
+
+  it('speakerOverrides が設定ファイルから復元される', () => {
+    manager.setSettings({ speakerOverrides: { emotion: 7 } })
+
+    const manager2 = new TtsManager(tmpDir)
+    const settings = manager2.getSettings()
+    expect(settings.speakerOverrides).toEqual({ emotion: 7 })
+    manager2.dispose()
+  })
+
+  it('handleEvent が speakerOverrides を反映して speak に渡す', async () => {
+    const adapter = createMockAdapter()
+    manager.registerAdapter(adapter)
+    manager.setSettings({
+      enabled: true,
+      adapterId: 'mock',
+      speakerOverrides: { comment: 10 }
+    })
+
+    manager.handleEvent('comment', { content: 'テスト' })
+
+    await vi.waitFor(() => {
+      expect(adapter.speak).toHaveBeenCalledWith('テスト', 1, 1, 10)
+    })
+  })
+
+  it('speakerOverrides 未設定のイベントは undefined を渡す', async () => {
+    const adapter = createMockAdapter()
+    manager.registerAdapter(adapter)
+    manager.setSettings({
+      enabled: true,
+      adapterId: 'mock',
+      speakerOverrides: { gift: 5 }
+    })
+
+    manager.handleEvent('comment', { content: 'テスト' })
+
+    await vi.waitFor(() => {
+      expect(adapter.speak).toHaveBeenCalledWith('テスト', 1, 1, undefined)
     })
   })
 })

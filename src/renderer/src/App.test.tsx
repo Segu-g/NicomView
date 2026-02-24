@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, act } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import type { ConnectionState, CommentViewerAPI } from '../../shared/types'
+import { DEFAULT_TTS_TEMPLATES } from '../../shared/types'
 import App from './App'
 
 let stateChangeCallback: ((state: ConnectionState) => void) | null = null
@@ -49,7 +50,9 @@ beforeEach(() => {
       enabledEvents: ['comment', 'gift', 'emotion', 'notification', 'operatorComment'],
       speed: 1,
       volume: 1,
-      adapterSettings: {}
+      adapterSettings: {},
+      formatTemplates: { ...DEFAULT_TTS_TEMPLATES },
+      speakerOverrides: {}
     }),
     setTtsSettings: vi.fn<CommentViewerAPI['setTtsSettings']>().mockResolvedValue(undefined),
     getTtsAdapters: vi.fn<CommentViewerAPI['getTtsAdapters']>().mockResolvedValue([

@@ -44,7 +44,7 @@ import type {
   TtsAdapterInfo,
   TtsAdapterParamDef
 } from '../../shared/types'
-import { ALL_EVENT_TYPES } from '../../shared/types'
+import { ALL_EVENT_TYPES, DEFAULT_TTS_TEMPLATES } from '../../shared/types'
 import EventFilter from './components/EventFilter'
 
 const theme = createTheme({
@@ -81,6 +81,14 @@ const defaultPreferences: PluginPreferences = {
 }
 
 const BASE_URL = 'http://localhost:3939'
+
+const templatePlaceholders: Record<CommentEventType, string> = {
+  comment: '{userName}, {content}',
+  gift: '{userName}, {itemName}, {point}',
+  emotion: '{content}',
+  notification: '{message}',
+  operatorComment: '{content}, {name}'
+}
 
 function App(): JSX.Element {
   const [liveId, setLiveId] = useState('')
@@ -231,6 +239,8 @@ function App(): JSX.Element {
   const toggleExpanded = useCallback((pluginId: string) => {
     setExpandedPlugin((prev) => (prev === pluginId ? null : pluginId))
   }, [])
+
+  const speakerOptions = ttsParamDefs.find((p) => p.key === 'speakerId')?.options ?? []
 
   const isConnected = connectionState === 'connected'
   const isConnecting = connectionState === 'connecting'
@@ -508,34 +518,81 @@ function App(): JSX.Element {
                 <Typography variant="caption" color="text.secondary">
                   読み上げ対象イベント
                 </Typography>
-                <FormGroup row>
-                  {ALL_EVENT_TYPES.map((eventType) => (
-                    <FormControlLabel
-                      key={eventType}
-                      control={
-                        <Checkbox
-                          size="small"
-                          checked={ttsSettings.enabledEvents.includes(eventType)}
-                          onChange={(e) => {
-                            const next = e.target.checked
-                              ? [...ttsSettings.enabledEvents, eventType]
-                              : ttsSettings.enabledEvents.filter((t: CommentEventType) => t !== eventType)
-                            handleTtsChange({ enabledEvents: next })
-                          }}
-                        />
-                      }
-                      label={
-                        {
-                          comment: 'コメント',
-                          gift: 'ギフト',
-                          emotion: 'エモーション',
-                          notification: '通知',
-                          operatorComment: '運営コメント'
-                        }[eventType]
-                      }
-                    />
-                  ))}
-                </FormGroup>
+                {ALL_EVENT_TYPES.map((eventType) => {
+                  const enabled = ttsSettings.enabledEvents.includes(eventType)
+                  const label = {
+                    comment: 'コメント',
+                    gift: 'ギフト',
+                    emotion: 'エモーション',
+                    notification: '通知',
+                    operatorComment: '運営コメント'
+                  }[eventType]
+                  return (
+                    <Box key={eventType}>
+                      <FormControlLabel
+                        control={
+                          <Checkbox
+                            size="small"
+                            checked={enabled}
+                            onChange={(e) => {
+                              const next = e.target.checked
+                                ? [...ttsSettings.enabledEvents, eventType]
+                                : ttsSettings.enabledEvents.filter((t: CommentEventType) => t !== eventType)
+                              handleTtsChange({ enabledEvents: next })
+                            }}
+                          />
+                        }
+                        label={label}
+                      />
+                      {enabled && (
+                        <>
+                          <TextField
+                            fullWidth
+                            size="small"
+                            label={`${label}テンプレート`}
+                            value={ttsSettings.formatTemplates[eventType] ?? DEFAULT_TTS_TEMPLATES[eventType]}
+                            helperText={`使用可能: ${templatePlaceholders[eventType]}`}
+                            onChange={(e) => {
+                              handleTtsChange({
+                                formatTemplates: { ...ttsSettings.formatTemplates, [eventType]: e.target.value }
+                              })
+                            }}
+                            sx={{ mb: 1, ml: 4 }}
+                          />
+                          {speakerOptions.length > 0 && (
+                            <Box sx={{ mb: 1, ml: 4 }}>
+                              <Typography variant="caption" color="text.secondary">
+                                {label}キャラクター
+                              </Typography>
+                              <Select
+                                fullWidth
+                                size="small"
+                                value={ttsSettings.speakerOverrides[eventType] ?? ''}
+                                onChange={(e) => {
+                                  const val = e.target.value
+                                  const next = { ...ttsSettings.speakerOverrides }
+                                  if (val === '') {
+                                    delete next[eventType]
+                                  } else {
+                                    next[eventType] = val
+                                  }
+                                  handleTtsChange({ speakerOverrides: next })
+                                }}
+                              >
+                                <MenuItem value="">デフォルト</MenuItem>
+                                {speakerOptions.map((opt) => (
+                                  <MenuItem key={opt.value} value={opt.value}>
+                                    {opt.label}
+                                  </MenuItem>
+                                ))}
+                              </Select>
+                            </Box>
+                          )}
+                        </>
+                      )}
+                    </Box>
+                  )
+                })}
               </Box>
 
               <Box sx={{ mb: 1 }}>

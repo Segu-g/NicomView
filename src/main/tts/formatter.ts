@@ -1,54 +1,14 @@
-import type { CommentEventType } from '../../shared/types'
+export function formatTtsText(
+  template: string,
+  data: Record<string, unknown>
+): string | null {
+  const result = template.replace(/\{(\w+)\}/g, (_match, key: string) => {
+    const value = data[key]
+    return value != null ? String(value) : ''
+  })
 
-interface CommentData {
-  content?: string
-}
+  // All placeholders resolved to empty → treat as nothing to say
+  if (!result.trim()) return null
 
-interface GiftData {
-  userName?: string
-  itemName?: string
-}
-
-interface EmotionData {
-  content?: string
-}
-
-interface NotificationData {
-  message?: string
-}
-
-interface OperatorCommentData {
-  content?: string
-}
-
-type EventData = CommentData | GiftData | EmotionData | NotificationData | OperatorCommentData
-
-export function formatTtsText(eventType: CommentEventType, data: unknown): string | null {
-  const d = data as EventData
-  switch (eventType) {
-    case 'comment': {
-      const { content } = d as CommentData
-      return content || null
-    }
-    case 'gift': {
-      const { userName, itemName } = d as GiftData
-      if (!userName && !itemName) return null
-      return `${userName ?? '匿名'}さんが${itemName ?? 'ギフト'}を贈りました`
-    }
-    case 'emotion': {
-      const { content } = d as EmotionData
-      return content || null
-    }
-    case 'notification': {
-      const { message } = d as NotificationData
-      return message || null
-    }
-    case 'operatorComment': {
-      const { content } = d as OperatorCommentData
-      if (!content) return null
-      return `運営コメント: ${content}`
-    }
-    default:
-      return null
-  }
+  return result
 }

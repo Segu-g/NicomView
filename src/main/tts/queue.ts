@@ -2,8 +2,13 @@ import type { TtsAdapter } from './types'
 
 const MAX_QUEUE_SIZE = 30
 
+interface QueueItem {
+  text: string
+  speakerOverride?: number | string
+}
+
 export class TtsQueue {
-  private queue: string[] = []
+  private queue: QueueItem[] = []
   private processing = false
   private adapter: TtsAdapter | null = null
   private speed = 1
@@ -18,11 +23,11 @@ export class TtsQueue {
     this.volume = volume
   }
 
-  enqueue(text: string): void {
+  enqueue(text: string, speakerOverride?: number | string): void {
     if (this.queue.length >= MAX_QUEUE_SIZE) {
       this.queue.shift()
     }
-    this.queue.push(text)
+    this.queue.push({ text, speakerOverride })
     this.processNext()
   }
 
@@ -33,12 +38,12 @@ export class TtsQueue {
   private async processNext(): Promise<void> {
     if (this.processing || !this.adapter) return
 
-    const text = this.queue.shift()
-    if (!text) return
+    const item = this.queue.shift()
+    if (!item) return
 
     this.processing = true
     try {
-      await this.adapter.speak(text, this.speed, this.volume)
+      await this.adapter.speak(item.text, this.speed, this.volume, item.speakerOverride)
     } catch (err) {
       console.error('[TTS] speak error:', err)
     } finally {

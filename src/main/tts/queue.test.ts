@@ -7,7 +7,7 @@ function createMockAdapter(): TtsAdapter {
     id: 'mock',
     name: 'Mock',
     defaultSettings: {},
-    speak: vi.fn<(text: string, speed: number, volume: number) => Promise<void>>().mockResolvedValue(undefined),
+    speak: vi.fn<(text: string, speed: number, volume: number, speakerOverride?: number | string) => Promise<void>>().mockResolvedValue(undefined),
     isAvailable: vi.fn<() => Promise<boolean>>().mockResolvedValue(true),
     getParamDefs: vi.fn().mockResolvedValue([]),
     updateSettings: vi.fn(),
@@ -30,7 +30,7 @@ describe('TtsQueue', () => {
     queue.enqueue('テスト')
     // speak は非同期で呼ばれるので少し待つ
     await vi.waitFor(() => {
-      expect(adapter.speak).toHaveBeenCalledWith('テスト', 1, 1)
+      expect(adapter.speak).toHaveBeenCalledWith('テスト', 1, 1, undefined)
     })
   })
 
@@ -103,7 +103,23 @@ describe('TtsQueue', () => {
     queue.enqueue('テスト')
 
     await vi.waitFor(() => {
-      expect(adapter.speak).toHaveBeenCalledWith('テスト', 1.5, 0.8)
+      expect(adapter.speak).toHaveBeenCalledWith('テスト', 1.5, 0.8, undefined)
+    })
+  })
+
+  it('speakerOverride 付き enqueue で adapter.speak に渡される', async () => {
+    queue.enqueue('テスト', 3)
+
+    await vi.waitFor(() => {
+      expect(adapter.speak).toHaveBeenCalledWith('テスト', 1, 1, 3)
+    })
+  })
+
+  it('speakerOverride なしの enqueue は undefined を渡す', async () => {
+    queue.enqueue('テスト')
+
+    await vi.waitFor(() => {
+      expect(adapter.speak).toHaveBeenCalledWith('テスト', 1, 1, undefined)
     })
   })
 })

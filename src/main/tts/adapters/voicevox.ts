@@ -83,12 +83,13 @@ export class VoicevoxAdapter implements TtsAdapter {
     return defs
   }
 
-  async speak(text: string, speed: number, volume: number): Promise<void> {
+  async speak(text: string, speed: number, volume: number, speakerOverride?: number | string): Promise<void> {
     const baseUrl = `http://${this.host}:${this.port}`
+    const speaker = speakerOverride !== undefined ? Number(speakerOverride) : this.speakerId
 
     // 1. POST /audio_query
     const queryRes = await fetch(
-      `${baseUrl}/audio_query?text=${encodeURIComponent(text)}&speaker=${this.speakerId}`,
+      `${baseUrl}/audio_query?text=${encodeURIComponent(text)}&speaker=${speaker}`,
       { method: 'POST' }
     )
     if (!queryRes.ok) {
@@ -101,7 +102,7 @@ export class VoicevoxAdapter implements TtsAdapter {
     query.volumeScale = volume
 
     // 2. POST /synthesis
-    const synthRes = await fetch(`${baseUrl}/synthesis?speaker=${this.speakerId}`, {
+    const synthRes = await fetch(`${baseUrl}/synthesis?speaker=${speaker}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(query)

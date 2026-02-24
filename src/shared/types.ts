@@ -10,6 +10,14 @@ export const ALL_EVENT_TYPES: CommentEventType[] = [
   'operatorComment'
 ]
 
+export const DEFAULT_TTS_TEMPLATES: Record<CommentEventType, string> = {
+  comment: '{content}',
+  gift: '{userName}さんが{itemName}を贈りました',
+  emotion: '{content}',
+  notification: '{message}',
+  operatorComment: '運営コメント: {content}'
+}
+
 export type PluginSettings = Record<string, string | number | boolean>
 
 export interface PluginManifest {
@@ -43,6 +51,8 @@ export interface TtsSettings {
   speed: number
   volume: number
   adapterSettings: Record<string, string | number | boolean>
+  formatTemplates: Record<CommentEventType, string>
+  speakerOverrides: Partial<Record<CommentEventType, number | string>>
 }
 
 export interface TtsAdapterInfo {

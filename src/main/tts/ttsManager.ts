@@ -1,7 +1,7 @@
 import fs from 'fs'
 import path from 'path'
 import type { CommentEventType, TtsSettings, TtsAdapterInfo, TtsAdapterParamDef } from '../../shared/types'
-import { ALL_EVENT_TYPES } from '../../shared/types'
+import { ALL_EVENT_TYPES, DEFAULT_TTS_TEMPLATES } from '../../shared/types'
 import type { TtsAdapter } from './types'
 import { TtsQueue } from './queue'
 import { formatTtsText } from './formatter'
@@ -38,10 +38,12 @@ export class TtsManager {
     if (!this.settings.enabledEvents.includes(eventType)) return
     if (!this.queue) return
 
-    const text = formatTtsText(eventType, data)
+    const template = this.settings.formatTemplates[eventType]
+    const text = formatTtsText(template, data as Record<string, unknown>)
     if (!text) return
 
-    this.queue.enqueue(text)
+    const speakerOverride = this.settings.speakerOverrides[eventType]
+    this.queue.enqueue(text, speakerOverride)
   }
 
   getSettings(): TtsSettings {
@@ -70,6 +72,12 @@ export class TtsManager {
       this.settings.adapterSettings = { ...partial.adapterSettings }
       const currentAdapter = this.adapters.get(this.settings.adapterId)
       currentAdapter?.updateSettings(this.settings.adapterSettings)
+    }
+    if (partial.formatTemplates !== undefined) {
+      this.settings.formatTemplates = { ...DEFAULT_TTS_TEMPLATES, ...partial.formatTemplates }
+    }
+    if (partial.speakerOverrides !== undefined) {
+      this.settings.speakerOverrides = { ...partial.speakerOverrides }
     }
 
     this.queue.setParams(this.settings.speed, this.settings.volume)
@@ -104,7 +112,9 @@ export class TtsManager {
       enabledEvents: [...ALL_EVENT_TYPES],
       speed: 1,
       volume: 1,
-      adapterSettings: {}
+      adapterSettings: {},
+      formatTemplates: { ...DEFAULT_TTS_TEMPLATES },
+      speakerOverrides: {}
     }
 
     try {
@@ -121,7 +131,15 @@ export class TtsManager {
           adapterSettings:
             typeof raw.adapterSettings === 'object' && raw.adapterSettings !== null
               ? raw.adapterSettings
-              : defaults.adapterSettings
+              : defaults.adapterSettings,
+          formatTemplates:
+            typeof raw.formatTemplates === 'object' && raw.formatTemplates !== null
+              ? { ...DEFAULT_TTS_TEMPLATES, ...raw.formatTemplates }
+              : defaults.formatTemplates,
+          speakerOverrides:
+            typeof raw.speakerOverrides === 'object' && raw.speakerOverrides !== null
+              ? raw.speakerOverrides
+              : defaults.speakerOverrides
         }
       }
     } catch (err) {
