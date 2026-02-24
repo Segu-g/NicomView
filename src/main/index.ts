@@ -6,6 +6,7 @@ import { CommentManager } from './commentManager'
 import { PluginManager } from './pluginManager'
 import { TtsManager } from './tts/ttsManager'
 import { VoicevoxAdapter } from './tts/adapters/voicevox'
+import { BouyomichanAdapter } from './tts/adapters/bouyomichan'
 import type { CommentEventType, PluginPreferences, PluginSettings, TtsSettings } from '../shared/types'
 
 let mainWindow: BrowserWindow | null = null
@@ -70,6 +71,7 @@ async function createWindow(): Promise<void> {
   // TtsManager 初期化
   ttsManager = new TtsManager(app.getPath('userData'))
   ttsManager.registerAdapter(new VoicevoxAdapter())
+  ttsManager.registerAdapter(new BouyomichanAdapter())
 
   // CommentManager 初期化
   commentManager = new CommentManager(
