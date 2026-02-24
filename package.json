@@ -15,7 +15,10 @@
     "package:win": "npm run build && electron-builder --win --publish never",
     "package:mac": "npm run build && electron-builder --mac --publish never",
     "package:linux": "npm run build && electron-builder --linux --publish never",
-    "test:e2e": "npx playwright test --config=e2e/playwright.config.ts"
+    "test:e2e": "npx playwright test --config=e2e/playwright.config.ts",
+    "capture-screenshots": "npm run build && npx tsx scripts/capture-screenshots.ts",
+    "build:docs": "npx vite build --config docs-src/vite.config.ts",
+    "dev:docs": "npx vite dev --config docs-src/vite.config.ts"
   },
   "build": {
     "appId": "com.nicomview.comment-viewer",
