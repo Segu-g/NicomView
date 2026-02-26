@@ -3,6 +3,14 @@ import { PsdAvatar } from './PsdAvatar'
 
 const params = new URLSearchParams(location.search)
 
+function parseLayerPaths(value: string | null): string[] {
+  if (!value) return []
+  if (value.startsWith('[')) {
+    try { return JSON.parse(value) as string[] } catch { /* fall through */ }
+  }
+  return [value] // backward compat: plain path string
+}
+
 const props = {
   psdFile: params.get('psdFile') || 'models/default.psd',
   voicevoxHost: params.get('voicevoxHost') || 'http://localhost:50021',
@@ -10,18 +18,18 @@ const props = {
   speed: Number(params.get('speed')) || 1.0,
   volume: Number(params.get('volume')) || 1.0,
   mouth: [
-    params.get('mouth0') || '',
-    params.get('mouth1') || '',
-    params.get('mouth2') || '',
-    params.get('mouth3') || '',
-    params.get('mouth4') || '',
+    parseLayerPaths(params.get('mouth0')),
+    parseLayerPaths(params.get('mouth1')),
+    parseLayerPaths(params.get('mouth2')),
+    parseLayerPaths(params.get('mouth3')),
+    parseLayerPaths(params.get('mouth4')),
   ],
   eye: [
-    params.get('eye0') || '',
-    params.get('eye1') || '',
-    params.get('eye2') || '',
-    params.get('eye3') || '',
-    params.get('eye4') || '',
+    parseLayerPaths(params.get('eye0')),
+    parseLayerPaths(params.get('eye1')),
+    parseLayerPaths(params.get('eye2')),
+    parseLayerPaths(params.get('eye3')),
+    parseLayerPaths(params.get('eye4')),
   ],
   threshold: Number(params.get('threshold')) || 0.15,
   sensitivity: Number(params.get('sensitivity')) || 8,

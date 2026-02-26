@@ -50,11 +50,19 @@ function parseVisibility(settings: Record<string, string | number>): Record<stri
   return {}
 }
 
+function parseLayerPaths(value: string | number): string[] {
+  const str = String(value ?? '')
+  if (!str) return []
+  if (str.startsWith('[')) {
+    try { return JSON.parse(str) as string[] } catch { /* fall through */ }
+  }
+  return [str] // backward compat: plain path string
+}
+
 function buildRoleMap(settings: Record<string, string | number>): Record<string, string[]> {
   const map: Record<string, string[]> = {}
   for (const key of ALL_ROLE_KEYS) {
-    const path = String(settings[key] ?? '')
-    if (path) {
+    for (const path of parseLayerPaths(settings[key] ?? '')) {
       if (!map[path]) map[path] = []
       map[path].push(key)
     }
@@ -195,12 +203,10 @@ export function Settings({ pluginId }: Props) {
 
   const handleRoleToggle = useCallback(
     (layerPath: string, roleKey: string) => {
-      const current = String(settings[roleKey] ?? '')
-      if (current === layerPath) {
-        update(roleKey, '')
-      } else {
-        update(roleKey, layerPath)
-      }
+      const current = parseLayerPaths(settings[roleKey] ?? '')
+      const idx = current.indexOf(layerPath)
+      const next = idx >= 0 ? current.filter((_, i) => i !== idx) : [...current, layerPath]
+      update(roleKey, JSON.stringify(next))
     },
     [settings, update]
   )

@@ -9,8 +9,8 @@ export interface PsdAvatarProps {
   speaker: number
   speed: number
   volume: number
-  mouth: string[]
-  eye: string[]
+  mouth: string[][]
+  eye: string[][]
   threshold: number
   sensitivity: number
   mouthTransitionFrames: number
@@ -26,8 +26,8 @@ type RenderItem =
 
 interface ResolvedLayers {
   sequence: RenderItem[]
-  eye: (PsdLayer | null)[]
-  mouth: (PsdLayer | null)[]
+  eye: (PsdLayer[] | null)[]
+  mouth: (PsdLayer[] | null)[]
 }
 
 /** Fill null entries with the nearest non-null neighbor */
@@ -49,13 +49,13 @@ function fillNearestNeighbor<T>(arr: (T | null)[]): (T | null)[] {
 
 function buildRenderSequence(
   psd: PsdData,
-  mouthPaths: string[],
-  eyePaths: string[],
+  mouthPaths: string[][],
+  eyePaths: string[][],
   layerVisibility: Record<string, boolean>,
 ): ResolvedLayers {
   const leafLayers = getLeafLayers(psd)
-  const mouthSet = new Set(mouthPaths.filter(Boolean))
-  const eyeSet = new Set(eyePaths.filter(Boolean))
+  const mouthSet = new Set(mouthPaths.flat().filter(Boolean))
+  const eyeSet = new Set(eyePaths.flat().filter(Boolean))
 
   const sequence: RenderItem[] = []
   let segmentLayers: PsdLayer[] = []
@@ -85,13 +85,16 @@ function buildRenderSequence(
   }
   flushSegment()
 
-  const rawEye = eyePaths.map((p) => (p ? leafLayers.find((l) => l.path === p) ?? null : null))
-  const rawMouth = mouthPaths.map((p) => (p ? leafLayers.find((l) => l.path === p) ?? null : null))
+  const layerMap = new Map<string, PsdLayer>(leafLayers.map((l) => [l.path, l]))
+  const resolve = (paths: string[]): PsdLayer[] | null => {
+    const layers = paths.map((p) => layerMap.get(p)).filter(Boolean) as PsdLayer[]
+    return layers.length > 0 ? layers : null
+  }
 
   return {
     sequence,
-    eye: fillNearestNeighbor(rawEye),
-    mouth: fillNearestNeighbor(rawMouth),
+    eye: fillNearestNeighbor(eyePaths.map(resolve)),
+    mouth: fillNearestNeighbor(mouthPaths.map(resolve)),
   }
 }
 
@@ -126,16 +129,16 @@ export function PsdAvatar(props: PsdAvatarProps): JSX.Element {
     const ctx = canvas.getContext('2d')!
     ctx.clearRect(0, 0, canvas.width, canvas.height)
 
-    const activeEye = resolved.eye[eyeFrameRef.current]
-    const activeMouth = resolved.mouth[mouthLevelRef.current]
+    const activeEyes = resolved.eye[eyeFrameRef.current] ?? []
+    const activeMouths = resolved.mouth[mouthLevelRef.current] ?? []
 
     for (const item of resolved.sequence) {
       if (item.kind === 'segment') {
         ctx.drawImage(item.canvas, 0, 0)
       } else if (item.role === 'eye') {
-        if (activeEye === item.layer) drawLayer(ctx, item.layer)
+        if (activeEyes.includes(item.layer)) drawLayer(ctx, item.layer)
       } else {
-        if (activeMouth === item.layer) drawLayer(ctx, item.layer)
+        if (activeMouths.includes(item.layer)) drawLayer(ctx, item.layer)
       }
     }
 
@@ -197,7 +200,7 @@ export function PsdAvatar(props: PsdAvatarProps): JSX.Element {
   useEffect(() => {
     if (props.preview) return
     const { blinkInterval, blinkSpeed } = props
-    if (props.eye.every((p) => !p)) return
+    if (props.eye.every((p) => p.length === 0)) return
 
     let blinkTimer: ReturnType<typeof setTimeout>
     let animFrame: number | null = null
