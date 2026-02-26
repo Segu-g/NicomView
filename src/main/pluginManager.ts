@@ -109,8 +109,7 @@ export class PluginManager {
     const plugin = this.plugins.get(id)
     if (!plugin) return undefined
 
-    const dir = plugin.builtIn ? this.builtInDir : this.externalDir
-    return path.join(dir, id)
+    return path.join(this.pluginsDir, id)
   }
 
   private loadSettings(): Record<string, PluginSettings> {
