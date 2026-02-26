@@ -34,12 +34,10 @@ export class PluginManager {
   private preferencesPath: string
   private settingsPath: string
   private allSettings: Record<string, PluginSettings>
-  private builtInDir: string
-  private externalDir: string
+  private pluginsDir: string
 
-  constructor(builtInDir: string, externalDir: string, userDataDir: string) {
-    this.builtInDir = builtInDir
-    this.externalDir = externalDir
+  constructor(pluginsDir: string, userDataDir: string) {
+    this.pluginsDir = pluginsDir
     this.preferencesPath = path.join(userDataDir, PREFERENCES_FILE)
     this.settingsPath = path.join(userDataDir, SETTINGS_FILE)
     this.preferences = this.loadPreferences()
@@ -48,23 +46,19 @@ export class PluginManager {
 
   discover(): void {
     this.plugins.clear()
-    this.scanDirectory(this.builtInDir, true)
-    this.scanDirectory(this.externalDir, false)
-  }
 
-  private scanDirectory(dir: string, builtIn: boolean): void {
-    if (!fs.existsSync(dir)) return
+    if (!fs.existsSync(this.pluginsDir)) return
 
     let entries: fs.Dirent[]
     try {
-      entries = fs.readdirSync(dir, { withFileTypes: true })
+      entries = fs.readdirSync(this.pluginsDir, { withFileTypes: true })
     } catch {
       return
     }
 
     for (const entry of entries) {
       if (!entry.isDirectory()) continue
-      const manifestPath = path.join(dir, entry.name, 'plugin.json')
+      const manifestPath = path.join(this.pluginsDir, entry.name, 'plugin.json')
       if (!fs.existsSync(manifestPath)) continue
 
       try {
@@ -73,7 +67,7 @@ export class PluginManager {
 
         const descriptor: PluginDescriptor = {
           ...raw,
-          builtIn,
+          builtIn: false,
           basePath: `/plugins/${raw.id}`
         }
         this.plugins.set(raw.id, descriptor)

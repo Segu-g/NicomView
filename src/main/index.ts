@@ -1,6 +1,10 @@
 import { app, BrowserWindow, ipcMain, shell } from 'electron'
 import path from 'path'
-import { mkdirSync } from 'fs'
+import { mkdirSync, readdirSync, cpSync, existsSync } from 'fs'
+
+function getPluginsPath(): string {
+  return path.join(app.getPath('userData'), 'plugins')
+}
 import { NiconicoProvider } from 'nicomget'
 import { createServer, type CommentServer } from './server'
 import { CommentManager } from './commentManager'
@@ -23,8 +27,16 @@ function getBuiltInPluginsPath(): string {
   return path.join(__dirname, '../../resources/plugins')
 }
 
-function getExternalPluginsPath(): string {
-  return path.join(app.getPath('userData'), 'plugins')
+/** ビルトインプラグインを userData/plugins/ へ同期コピーする */
+function syncBuiltInPlugins(): void {
+  const src = getBuiltInPluginsPath()
+  const dest = getPluginsPath()
+  mkdirSync(dest, { recursive: true })
+  if (!existsSync(src)) return
+  for (const entry of readdirSync(src, { withFileTypes: true })) {
+    if (!entry.isDirectory()) continue
+    cpSync(path.join(src, entry.name), path.join(dest, entry.name), { recursive: true })
+  }
 }
 
 async function createWindow(): Promise<void> {
@@ -39,12 +51,9 @@ async function createWindow(): Promise<void> {
     title: 'NicomView'
   })
 
-  // PluginManager 初期化
-  pluginManager = new PluginManager(
-    getBuiltInPluginsPath(),
-    getExternalPluginsPath(),
-    app.getPath('userData')
-  )
+  // ビルトインプラグインを userData/plugins/ へ同期してから探索
+  syncBuiltInPlugins()
+  pluginManager = new PluginManager(getPluginsPath(), app.getPath('userData'))
   pluginManager.discover()
 
   // Express + WebSocket サーバー起動
@@ -132,9 +141,7 @@ async function createWindow(): Promise<void> {
   })
 
   ipcMain.handle('open-plugin-folder', () => {
-    const folderPath = getExternalPluginsPath()
-    mkdirSync(folderPath, { recursive: true })
-    shell.openPath(folderPath)
+    shell.openPath(getPluginsPath())
   })
 
   // レンダラーのコンソールログをメインプロセスに転送（デバッグ用）
