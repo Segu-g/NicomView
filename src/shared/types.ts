@@ -91,4 +91,5 @@ export interface CommentViewerAPI {
   setTtsSettings(settings: Partial<TtsSettings>): Promise<void>
   getTtsAdapters(): Promise<TtsAdapterInfo[]>
   getTtsAdapterParams(adapterId: string): Promise<TtsAdapterParamDef[]>
+  openPluginFolder(): Promise<void>
 }

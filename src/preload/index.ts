@@ -63,6 +63,10 @@ const api: CommentViewerAPI = {
 
   getTtsAdapterParams(adapterId: string): Promise<TtsAdapterParamDef[]> {
     return ipcRenderer.invoke('get-tts-adapter-params', adapterId)
+  },
+
+  openPluginFolder(): Promise<void> {
+    return ipcRenderer.invoke('open-plugin-folder')
   }
 }
 

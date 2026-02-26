@@ -1,5 +1,6 @@
-import { app, BrowserWindow, ipcMain } from 'electron'
+import { app, BrowserWindow, ipcMain, shell } from 'electron'
 import path from 'path'
+import { mkdirSync } from 'fs'
 import { NiconicoProvider } from 'nicomget'
 import { createServer, type CommentServer } from './server'
 import { CommentManager } from './commentManager'
@@ -128,6 +129,12 @@ async function createWindow(): Promise<void> {
 
   ipcMain.handle('get-tts-adapter-params', async (_event, adapterId: string) => {
     return (await ttsManager?.getAdapterParams(adapterId)) ?? []
+  })
+
+  ipcMain.handle('open-plugin-folder', () => {
+    const folderPath = getExternalPluginsPath()
+    mkdirSync(folderPath, { recursive: true })
+    shell.openPath(folderPath)
   })
 
   // レンダラーのコンソールログをメインプロセスに転送（デバッグ用）
