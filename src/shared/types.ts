@@ -10,6 +10,10 @@ export const ALL_EVENT_TYPES: CommentEventType[] = [
   'operatorComment'
 ]
 
+export function isValidEventType(t: unknown): t is CommentEventType {
+  return typeof t === 'string' && ALL_EVENT_TYPES.includes(t as CommentEventType)
+}
+
 export const DEFAULT_TTS_TEMPLATES: Record<CommentEventType, string> = {
   comment: '{content}',
   gift: '{userName}さんが{itemName}を贈りました',

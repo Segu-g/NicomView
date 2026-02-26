@@ -47,6 +47,7 @@ import type {
 } from '../../shared/types'
 import { ALL_EVENT_TYPES, DEFAULT_TTS_TEMPLATES } from '../../shared/types'
 import EventFilter from './components/EventFilter'
+import { EVENT_LABELS } from './utils/eventLabels'
 
 const theme = createTheme({
   colorSchemes: {
@@ -561,13 +562,7 @@ function App(): JSX.Element {
                 </Typography>
                 {ALL_EVENT_TYPES.map((eventType) => {
                   const enabled = ttsSettings.enabledEvents.includes(eventType)
-                  const label = {
-                    comment: 'コメント',
-                    gift: 'ギフト',
-                    emotion: 'エモーション',
-                    notification: '通知',
-                    operatorComment: '運営コメント'
-                  }[eventType]
+                  const label = EVENT_LABELS[eventType]
                   return (
                     <Box key={eventType}>
                       <FormControlLabel
