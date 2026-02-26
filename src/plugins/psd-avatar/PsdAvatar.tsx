@@ -90,8 +90,8 @@ export function PsdAvatar(props: PsdAvatarProps): JSX.Element {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const [psd, setPsd] = useState<PsdData | null>(null)
   const [error, setError] = useState<string | null>(null)
-  const mouthLevelRef = useRef(0)
-  const eyeFrameRef = useRef(0)
+  const mouthLevelRef = useRef(props.preview ? -1 : 0)
+  const eyeFrameRef = useRef(props.preview ? -1 : 0)
   const ttsQueueRef = useRef<TtsQueue | null>(null)
   const resolvedRef = useRef<ResolvedLayers | null>(null)
   const baseCanvasRef = useRef<HTMLCanvasElement | null>(null)
@@ -165,8 +165,9 @@ export function PsdAvatar(props: PsdAvatarProps): JSX.Element {
       threshold: props.threshold,
       sensitivity: props.sensitivity,
       onLipLevel: (level) => {
-        if (mouthLevelRef.current !== level) {
-          mouthLevelRef.current = level
+        const target = props.preview && level === 0 ? -1 : level
+        if (mouthLevelRef.current !== target) {
+          mouthLevelRef.current = target
           requestRender()
         }
       },
