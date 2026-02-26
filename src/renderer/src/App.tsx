@@ -152,8 +152,8 @@ function App(): JSX.Element {
       if (msg.type === 'nicomview:ready') {
         const { pluginId } = msg
         const settings = pluginSettings[pluginId] ?? {}
-        const iframe = iframeRefs.current[pluginId]
-        iframe?.contentWindow?.postMessage(
+        const source = e.source as Window | null
+        source?.postMessage(
           { type: 'nicomview:settings-init', settings } satisfies PluginSettingsMessage,
           '*'
         )
@@ -351,7 +351,17 @@ function App(): JSX.Element {
                       {plugin.settings && (
                         <Tooltip title="設定">
                           <IconButton
-                            onClick={() => toggleExpanded(plugin.id)}
+                            onClick={() => {
+                              if (plugin.settingsPopup) {
+                                window.open(
+                                  `${BASE_URL}/plugins/${plugin.id}/settings/?pluginId=${plugin.id}`,
+                                  `nicomview-settings-${plugin.id}`,
+                                  'width=480,height=720'
+                                )
+                              } else {
+                                toggleExpanded(plugin.id)
+                              }
+                            }}
                             size="small"
                             data-testid={`settings-toggle-${plugin.id}`}
                           >
@@ -366,7 +376,7 @@ function App(): JSX.Element {
                       </Tooltip>
                     </Box>
                   </Box>
-                  {plugin.settings && (
+                  {plugin.settings && !plugin.settingsPopup && (
                     <Collapse in={expandedPlugin === plugin.id}>
                       <Box sx={{ mt: 1, mb: 1 }}>
                         <iframe

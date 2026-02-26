@@ -5,7 +5,7 @@ import { resolve } from 'path'
 
 const rootDir = resolve(import.meta.dirname, '..')
 
-const plugins = ['comment-list', 'comment-cards']
+const plugins = ['comment-list', 'comment-cards', 'psd-avatar']
 
 async function buildPlugins() {
   for (const pluginId of plugins) {

@@ -28,6 +28,7 @@ export interface PluginManifest {
   overlay: boolean
   defaultFontSize?: number
   settings?: boolean
+  settingsPopup?: boolean
 }
 
 export interface PluginDescriptor extends PluginManifest {

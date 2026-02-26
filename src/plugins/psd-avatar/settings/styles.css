@@ -1,0 +1,110 @@
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: 'Noto Sans JP', 'Roboto', sans-serif;
+  background: #1e1e1e;
+  color: #e0e0e0;
+  font-size: 13px;
+}
+
+.settings-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 8px 0;
+}
+
+.settings-section {
+  border-top: 1px solid #333;
+  padding-top: 8px;
+}
+
+.settings-section-title {
+  font-size: 12px;
+  color: #90caf9;
+  margin-bottom: 8px;
+  font-weight: bold;
+}
+
+.settings-label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  color: #9e9e9e;
+  font-size: 12px;
+}
+
+.settings-label input,
+.settings-label select {
+  padding: 6px 8px;
+  border: 1px solid #444;
+  border-radius: 6px;
+  background: #2a2a2a;
+  color: #e0e0e0;
+  font-size: 13px;
+  outline: none;
+}
+
+.settings-label input:focus,
+.settings-label select:focus {
+  border-color: #90caf9;
+}
+
+.settings-row {
+  display: flex;
+  gap: 8px;
+  align-items: flex-end;
+}
+
+.settings-row > .settings-label {
+  flex: 1;
+}
+
+.settings-btn {
+  padding: 6px 12px;
+  border: 1px solid #444;
+  border-radius: 6px;
+  background: #333;
+  color: #e0e0e0;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.settings-btn:hover {
+  background: #444;
+}
+
+.settings-btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.layer-tree {
+  max-height: 150px;
+  overflow-y: auto;
+  border: 1px solid #444;
+  border-radius: 6px;
+  background: #2a2a2a;
+  padding: 4px;
+  font-size: 12px;
+  color: #bbb;
+}
+
+.layer-item {
+  padding: 2px 4px;
+  white-space: nowrap;
+}
+
+.layer-item.group {
+  color: #90caf9;
+}
+
+.error-text {
+  color: #f44336;
+  font-size: 12px;
+}
+
+.success-text {
+  color: #66bb6a;
+  font-size: 12px;
+}

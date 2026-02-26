@@ -1,0 +1,9 @@
+{
+  "id": "psd-avatar",
+  "name": "PSD アバター",
+  "version": "1.0.0",
+  "description": "PSD立ち絵の口パク・目パチ表示（VOICEVOX読み上げ連動）",
+  "overlay": true,
+  "settings": true,
+  "settingsPopup": true
+}
