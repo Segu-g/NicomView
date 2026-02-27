@@ -1,16 +1,12 @@
-import fs from 'fs'
 import path from 'path'
+import { saveJson, loadJsonRaw } from '../utils/jsonStore'
 import type { CommentEventType, TtsSettings, TtsAdapterInfo, TtsAdapterParamDef } from '../../shared/types'
-import { ALL_EVENT_TYPES, DEFAULT_TTS_TEMPLATES } from '../../shared/types'
+import { ALL_EVENT_TYPES, DEFAULT_TTS_TEMPLATES, isValidEventType } from '../../shared/types'
 import type { TtsAdapter } from './types'
 import { TtsQueue } from './queue'
 import { formatTtsText } from './formatter'
 
 const SETTINGS_FILE = 'tts-settings.json'
-
-function isValidEventType(t: unknown): t is CommentEventType {
-  return typeof t === 'string' && ALL_EVENT_TYPES.includes(t as CommentEventType)
-}
 
 export class TtsManager {
   private adapters: Map<string, TtsAdapter> = new Map()
@@ -117,42 +113,34 @@ export class TtsManager {
       speakerOverrides: {}
     }
 
-    try {
-      if (fs.existsSync(this.settingsPath)) {
-        const raw = JSON.parse(fs.readFileSync(this.settingsPath, 'utf-8'))
-        return {
-          enabled: typeof raw.enabled === 'boolean' ? raw.enabled : defaults.enabled,
-          adapterId: typeof raw.adapterId === 'string' ? raw.adapterId : defaults.adapterId,
-          enabledEvents: Array.isArray(raw.enabledEvents)
-            ? raw.enabledEvents.filter(isValidEventType)
-            : defaults.enabledEvents,
-          speed: typeof raw.speed === 'number' ? raw.speed : defaults.speed,
-          volume: typeof raw.volume === 'number' ? raw.volume : defaults.volume,
-          adapterSettings:
-            typeof raw.adapterSettings === 'object' && raw.adapterSettings !== null
-              ? raw.adapterSettings
-              : defaults.adapterSettings,
-          formatTemplates:
-            typeof raw.formatTemplates === 'object' && raw.formatTemplates !== null
-              ? { ...DEFAULT_TTS_TEMPLATES, ...raw.formatTemplates }
-              : defaults.formatTemplates,
-          speakerOverrides:
-            typeof raw.speakerOverrides === 'object' && raw.speakerOverrides !== null
-              ? raw.speakerOverrides
-              : defaults.speakerOverrides
-        }
-      }
-    } catch (err) {
-      console.error('[TTS] Failed to load settings:', err)
+    const raw = loadJsonRaw(this.settingsPath, 'TTS')
+    if (typeof raw !== 'object' || raw === null) return defaults
+
+    const r = raw as Record<string, unknown>
+    return {
+      enabled: typeof r.enabled === 'boolean' ? r.enabled : defaults.enabled,
+      adapterId: typeof r.adapterId === 'string' ? r.adapterId : defaults.adapterId,
+      enabledEvents: Array.isArray(r.enabledEvents)
+        ? r.enabledEvents.filter(isValidEventType)
+        : defaults.enabledEvents,
+      speed: typeof r.speed === 'number' ? r.speed : defaults.speed,
+      volume: typeof r.volume === 'number' ? r.volume : defaults.volume,
+      adapterSettings:
+        typeof r.adapterSettings === 'object' && r.adapterSettings !== null
+          ? r.adapterSettings as Record<string, string | number | boolean>
+          : defaults.adapterSettings,
+      formatTemplates:
+        typeof r.formatTemplates === 'object' && r.formatTemplates !== null
+          ? { ...DEFAULT_TTS_TEMPLATES, ...(r.formatTemplates as Record<string, string>) }
+          : defaults.formatTemplates,
+      speakerOverrides:
+        typeof r.speakerOverrides === 'object' && r.speakerOverrides !== null
+          ? r.speakerOverrides as TtsSettings['speakerOverrides']
+          : defaults.speakerOverrides
     }
-    return defaults
   }
 
   private saveSettings(): void {
-    const dir = path.dirname(this.settingsPath)
-    if (!fs.existsSync(dir)) {
-      fs.mkdirSync(dir, { recursive: true })
-    }
-    fs.writeFileSync(this.settingsPath, JSON.stringify(this.settings, null, 2), 'utf-8')
+    saveJson(this.settingsPath, this.settings)
   }
 }

@@ -1,5 +1,6 @@
 import fs from 'fs'
 import path from 'path'
+import { saveJson, loadJsonRaw } from './utils/jsonStore'
 import type {
   PluginManifest,
   PluginDescriptor,
@@ -7,7 +8,7 @@ import type {
   PluginSettings,
   CommentEventType
 } from '../shared/types'
-import { ALL_EVENT_TYPES } from '../shared/types'
+import { ALL_EVENT_TYPES, isValidEventType } from '../shared/types'
 
 const PREFERENCES_FILE = 'plugin-preferences.json'
 const SETTINGS_FILE = 'plugin-settings.json'
@@ -22,10 +23,6 @@ function isValidManifest(obj: unknown): obj is PluginManifest {
     typeof m.version === 'string' &&
     typeof m.overlay === 'boolean'
   )
-}
-
-function isValidEventType(t: unknown): t is CommentEventType {
-  return typeof t === 'string' && ALL_EVENT_TYPES.includes(t as CommentEventType)
 }
 
 export class PluginManager {
@@ -113,52 +110,32 @@ export class PluginManager {
   }
 
   private loadSettings(): Record<string, PluginSettings> {
-    try {
-      if (fs.existsSync(this.settingsPath)) {
-        const raw = JSON.parse(fs.readFileSync(this.settingsPath, 'utf-8'))
-        if (typeof raw === 'object' && raw !== null) {
-          return raw as Record<string, PluginSettings>
-        }
-      }
-    } catch (err) {
-      console.error('[PluginManager] Failed to load settings:', err)
+    const raw = loadJsonRaw(this.settingsPath, 'PluginManager')
+    if (typeof raw === 'object' && raw !== null) {
+      return raw as Record<string, PluginSettings>
     }
     return {}
   }
 
   private saveSettings(): void {
-    const dir = path.dirname(this.settingsPath)
-    if (!fs.existsSync(dir)) {
-      fs.mkdirSync(dir, { recursive: true })
-    }
-    fs.writeFileSync(this.settingsPath, JSON.stringify(this.allSettings, null, 2), 'utf-8')
+    saveJson(this.settingsPath, this.allSettings)
   }
 
   private loadPreferences(): PluginPreferences {
-    const defaults: PluginPreferences = {
-      enabledEvents: [...ALL_EVENT_TYPES]
-    }
-
-    try {
-      if (fs.existsSync(this.preferencesPath)) {
-        const raw = JSON.parse(fs.readFileSync(this.preferencesPath, 'utf-8'))
-        return {
-          enabledEvents: Array.isArray(raw.enabledEvents)
-            ? raw.enabledEvents.filter(isValidEventType)
-            : defaults.enabledEvents
-        }
+    const defaults: PluginPreferences = { enabledEvents: [...ALL_EVENT_TYPES] }
+    const raw = loadJsonRaw(this.preferencesPath, 'PluginManager')
+    if (typeof raw === 'object' && raw !== null) {
+      const r = raw as Record<string, unknown>
+      return {
+        enabledEvents: Array.isArray(r.enabledEvents)
+          ? r.enabledEvents.filter(isValidEventType)
+          : defaults.enabledEvents
       }
-    } catch (err) {
-      console.error('[PluginManager] Failed to load preferences:', err)
     }
     return defaults
   }
 
   private savePreferences(): void {
-    const dir = path.dirname(this.preferencesPath)
-    if (!fs.existsSync(dir)) {
-      fs.mkdirSync(dir, { recursive: true })
-    }
-    fs.writeFileSync(this.preferencesPath, JSON.stringify(this.preferences, null, 2), 'utf-8')
+    saveJson(this.preferencesPath, this.preferences)
   }
 }

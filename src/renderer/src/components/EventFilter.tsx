@@ -1,18 +1,11 @@
 import { FormGroup, FormControlLabel, Checkbox } from '@mui/material'
-import type { CommentEventType, PluginPreferences } from '../../../shared/types'
+import type { PluginPreferences } from '../../../shared/types'
 import { ALL_EVENT_TYPES } from '../../../shared/types'
+import { EVENT_LABELS } from '../utils/eventLabels'
 
 interface EventFilterProps {
   preferences: PluginPreferences
   onPreferencesChange: (prefs: Partial<PluginPreferences>) => void
-}
-
-const eventLabels: Record<CommentEventType, string> = {
-  comment: 'コメント',
-  gift: 'ギフト',
-  emotion: 'エモーション',
-  notification: '通知',
-  operatorComment: '運営コメント'
 }
 
 export default function EventFilter({
@@ -39,7 +32,7 @@ export default function EventFilter({
               onChange={(e) => handleToggle(eventType, e.target.checked)}
             />
           }
-          label={eventLabels[eventType]}
+          label={EVENT_LABELS[eventType]}
         />
       ))}
     </FormGroup>

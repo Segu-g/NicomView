@@ -44,27 +44,25 @@ export async function createServer(options: ServerOptions = {}): Promise<Comment
     httpServer.listen(httpPort, resolve)
   })
 
-  function broadcast(event: string, data: unknown): void {
-    historyBuffer.push({ event, data })
-    if (historyBuffer.length > HISTORY_MAX) {
-      historyBuffer.shift()
-    }
-    const message = JSON.stringify({ event, data })
-    for (const client of wss.clients) {
+  function sendToOpenClients(clients: Iterable<WebSocket>, message: string): void {
+    for (const client of clients) {
       if (client.readyState === WebSocket.OPEN) {
         client.send(message)
       }
     }
   }
 
+  function broadcast(event: string, data: unknown): void {
+    historyBuffer.push({ event, data })
+    if (historyBuffer.length > HISTORY_MAX) {
+      historyBuffer.shift()
+    }
+    sendToOpenClients(wss.clients, JSON.stringify({ event, data }))
+  }
+
   function clearHistory(): void {
     historyBuffer.length = 0
-    const message = JSON.stringify({ event: 'clear', data: {} })
-    for (const client of wss.clients) {
-      if (client.readyState === WebSocket.OPEN) {
-        client.send(message)
-      }
-    }
+    sendToOpenClients(wss.clients, JSON.stringify({ event: 'clear', data: {} }))
   }
 
   function registerPluginRoute(pluginId: string, fsPath: string): void {
