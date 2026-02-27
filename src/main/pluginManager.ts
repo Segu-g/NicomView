@@ -13,12 +13,15 @@ import { ALL_EVENT_TYPES, isValidEventType } from '../shared/types'
 const PREFERENCES_FILE = 'plugin-preferences.json'
 const SETTINGS_FILE = 'plugin-settings.json'
 
+// プラグイン ID に使用できる文字を制限（パストラバーサル・URL インジェクション対策）
+const PLUGIN_ID_RE = /^[a-zA-Z0-9_-]+$/
+
 function isValidManifest(obj: unknown): obj is PluginManifest {
   if (typeof obj !== 'object' || obj === null) return false
   const m = obj as Record<string, unknown>
   return (
     typeof m.id === 'string' &&
-    m.id.length > 0 &&
+    PLUGIN_ID_RE.test(m.id) &&
     typeof m.name === 'string' &&
     typeof m.version === 'string' &&
     typeof m.overlay === 'boolean'

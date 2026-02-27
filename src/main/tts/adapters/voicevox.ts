@@ -31,7 +31,15 @@ export class VoicevoxAdapter implements TtsAdapter {
   }
 
   updateSettings(settings: Record<string, string | number | boolean>): void {
-    if (settings.host !== undefined) this.host = String(settings.host)
+    if (settings.host !== undefined) {
+      const h = String(settings.host)
+      // スキームやパス区切り文字を含むホストを拒否（SSRF 対策）
+      if (/[/:?# ]/.test(h)) {
+        console.warn('[VOICEVOX] 不正なホスト名を拒否:', h)
+      } else {
+        this.host = h
+      }
+    }
     if (settings.port !== undefined) this.port = Number(settings.port)
     if (settings.speakerId !== undefined) this.speakerId = Number(settings.speakerId)
   }
@@ -155,7 +163,9 @@ export class VoicevoxAdapter implements TtsAdapter {
         args = [filePath]
       } else if (platform === 'win32') {
         cmd = 'powershell'
-        args = ['-c', `(New-Object Media.SoundPlayer '${filePath}').PlaySync()`]
+        // PowerShell 内シングルクォート文字列のエスケープ: ' → ''
+        const escapedPath = filePath.replace(/'/g, "''")
+        args = ['-c', `(New-Object Media.SoundPlayer '${escapedPath}').PlaySync()`]
       } else {
         reject(new Error(`Unsupported platform: ${platform}`))
         return

@@ -148,6 +148,10 @@ function App(): JSX.Element {
   // postMessage listener
   useEffect(() => {
     const handler = (e: MessageEvent) => {
+      // プラグイン設定ページは常に localhost:3939 から配信されるため、
+      // 他 origin からのメッセージは無視してなりすましを防ぐ
+      if (e.origin !== BASE_URL) return
+
       const msg = e.data as PluginSettingsMessage
       if (!msg?.type) return
 
@@ -157,7 +161,7 @@ function App(): JSX.Element {
         const source = e.source as Window | null
         source?.postMessage(
           { type: 'nicomview:settings-init', settings } satisfies PluginSettingsMessage,
-          '*'
+          BASE_URL  // '*' ではなく具体的な origin を指定
         )
       }
 

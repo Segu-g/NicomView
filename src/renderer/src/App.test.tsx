@@ -185,6 +185,7 @@ describe('App', () => {
       await act(async () => {
         window.dispatchEvent(
           new MessageEvent('message', {
+            origin: 'http://localhost:3939',
             data: {
               type: 'nicomview:settings-update',
               pluginId: 'comment-list',
@@ -206,6 +207,7 @@ describe('App', () => {
       await act(async () => {
         window.dispatchEvent(
           new MessageEvent('message', {
+            origin: 'http://localhost:3939',
             data: {
               type: 'nicomview:settings-update',
               pluginId: 'comment-list',

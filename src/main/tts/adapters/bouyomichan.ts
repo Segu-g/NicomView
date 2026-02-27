@@ -19,7 +19,15 @@ export class BouyomichanAdapter implements TtsAdapter {
   }
 
   updateSettings(settings: Record<string, string | number | boolean>): void {
-    if (settings.host !== undefined) this.host = String(settings.host)
+    if (settings.host !== undefined) {
+      const h = String(settings.host)
+      // スキームやパス区切り文字を含むホストを拒否（SSRF 対策）
+      if (/[/:?# ]/.test(h)) {
+        console.warn('[棒読みちゃん] 不正なホスト名を拒否:', h)
+      } else {
+        this.host = h
+      }
+    }
     if (settings.port !== undefined) this.port = Number(settings.port)
     if (settings.voice !== undefined) this.voice = Number(settings.voice)
     if (settings.tone !== undefined) this.tone = Number(settings.tone)

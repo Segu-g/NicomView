@@ -110,11 +110,15 @@ export function Settings({ pluginId }: Props) {
   const [previewAnimate, setPreviewAnimate] = useState(false)
   const [testText, setTestText] = useState('こんにちは')
   const previewRef = useRef<HTMLIFrameElement>(null)
+  // settings-init を送ってきた親の origin を記録し、以降の返信に使用する
+  const trustedOriginRef = useRef<string>('*')
 
   useEffect(() => {
     const handler = (e: MessageEvent) => {
       const msg = e.data as PluginSettingsMessage
       if (msg?.type === 'nicomview:settings-init') {
+        // 初回受信時に親 origin をキャプチャ（'*' ブロードキャストを防ぐ）
+        trustedOriginRef.current = e.origin
         const s = msg.settings
         const merged: Record<string, string | number> = { ...DEFAULTS }
         for (const [key, value] of Object.entries(s)) {
@@ -127,6 +131,7 @@ export function Settings({ pluginId }: Props) {
       }
     }
     window.addEventListener('message', handler)
+    // 初回 ready 通知: 親 origin 未確定のため '*' を使用（このメッセージにはペイロードなし）
     ;(window.opener || window.parent).postMessage({ type: 'nicomview:ready', pluginId }, '*')
     return () => window.removeEventListener('message', handler)
   }, [pluginId])
@@ -139,7 +144,7 @@ export function Settings({ pluginId }: Props) {
       }
       ;(window.opener || window.parent).postMessage(
         { type: 'nicomview:settings-update', pluginId, settings: ps },
-        '*'
+        trustedOriginRef.current  // キャプチャした親 origin に限定送信
       )
     },
     [pluginId]

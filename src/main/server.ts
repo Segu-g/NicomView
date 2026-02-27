@@ -20,6 +20,13 @@ export async function createServer(options: ServerOptions = {}): Promise<Comment
   const app = express()
   const pluginIds: string[] = []
 
+  // セキュリティヘッダー（OBS ブラウザソースはフレーム化するため X-Frame-Options は付与しない）
+  app.use((_req, res, next) => {
+    res.setHeader('X-Content-Type-Options', 'nosniff')
+    res.setHeader('X-XSS-Protection', '1; mode=block')
+    next()
+  })
+
   app.get('/', (_req, res) => {
     const links = pluginIds
       .map((id) => `<li><a href="/plugins/${id}/overlay/">${id}</a></li>`)
@@ -28,7 +35,15 @@ export async function createServer(options: ServerOptions = {}): Promise<Comment
   })
 
   const httpServer = http.createServer(app)
-  const wss = new WebSocketServer({ port: wsPort })
+  // Host ヘッダー検証: DNS リバインディング攻撃対策
+  // 正当なクライアント（OBS 等）は常に Host: localhost:PORT を使用する
+  const wss = new WebSocketServer({
+    port: wsPort,
+    verifyClient: (info) => {
+      const host = info.req.headers.host
+      return host === `localhost:${wsPort}` || host === `127.0.0.1:${wsPort}`
+    }
+  })
   const historyBuffer: { event: string; data: unknown }[] = []
   const HISTORY_MAX = 200
 
