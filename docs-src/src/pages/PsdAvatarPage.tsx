@@ -133,7 +133,7 @@ export function PsdAvatarPage() {
         </p>
         <ul>
           <li>
-            <strong>表示切り替え</strong> — チェックボックス（通常）またはラジオボタン（<code>*</code> レイヤー）で表示状態を設定
+            <strong>表示切り替え</strong> — チェックボックス（通常）またはラジオボタン（<code>*</code> レイヤー）で表示状態を設定。ラジオボタンは選択中のものを再クリックすると全解除できます
           </li>
           <li>
             <strong>ロール割り当て</strong> — <code>+</code> ドロップダウンで目・口フレームのロールを追加。

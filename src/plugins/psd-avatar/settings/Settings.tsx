@@ -1,4 +1,7 @@
 import { useEffect, useState, useCallback, useMemo, useRef } from 'react'
+import Checkbox from '@mui/material/Checkbox'
+import RadioButtonUncheckedIcon from '@mui/icons-material/RadioButtonUnchecked'
+import RadioButtonCheckedIcon from '@mui/icons-material/RadioButtonChecked'
 import type { PluginSettings, PluginSettingsMessage } from '../../../shared/types'
 import { loadPsd, type PsdData, type PsdLayer } from '../psdLoader'
 import { fetchSpeakers, type VoicevoxSpeaker } from '../voicevoxClient'
@@ -333,11 +336,14 @@ export function Settings({ pluginId }: Props) {
                       {l.forceVisible ? (
                         <input type="checkbox" checked readOnly disabled />
                       ) : l.isRadio ? (
-                        <input
-                          type="radio"
-                          name={parentPath}
+                        <Checkbox
+                          size="small"
                           checked={isVisible}
                           onChange={() => handleGroupVisibilityToggle(l)}
+                          icon={<RadioButtonUncheckedIcon style={{ fontSize: 14 }} />}
+                          checkedIcon={<RadioButtonCheckedIcon style={{ fontSize: 14 }} />}
+                          disableRipple
+                          sx={{ p: 0, color: '#666', '&.Mui-checked': { color: '#90caf9' } }}
                         />
                       ) : (
                         <input
@@ -365,11 +371,14 @@ export function Settings({ pluginId }: Props) {
                     {l.forceVisible ? (
                       <input type="checkbox" checked readOnly disabled />
                     ) : l.isRadio ? (
-                      <input
-                        type="radio"
-                        name={parentPath}
+                      <Checkbox
+                        size="small"
                         checked={isVisible}
                         onChange={() => handleVisibilityToggle(l)}
+                        icon={<RadioButtonUncheckedIcon style={{ fontSize: 14 }} />}
+                        checkedIcon={<RadioButtonCheckedIcon style={{ fontSize: 14 }} />}
+                        disableRipple
+                        sx={{ p: 0, color: '#666', '&.Mui-checked': { color: '#90caf9' } }}
                       />
                     ) : (
                       <input
