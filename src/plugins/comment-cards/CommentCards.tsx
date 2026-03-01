@@ -70,7 +70,7 @@ export function CommentCards() {
 
     onOperatorComment: useCallback((data: OperatorCommentData) => {
       pushCard({
-        username: '運営',
+        username: data.name || '放送者',
         content: data.content || '',
         type: 'operator',
       }, data.isHistory)
