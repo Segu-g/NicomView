@@ -1,6 +1,6 @@
 {
   "name": "nicomview",
-  "version": "1.5.1",
+  "version": "1.5.2",
   "description": "ニコニコ生放送コメントビューア for OBS",
   "type": "module",
   "main": "./out/main/index.js",
