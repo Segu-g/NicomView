@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, shell } from 'electron'
+import { app, BrowserWindow, ipcMain, shell, Menu } from 'electron'
 import path from 'path'
 import { mkdirSync, readdirSync, cpSync, existsSync } from 'fs'
 
@@ -162,7 +162,49 @@ async function createWindow(): Promise<void> {
   })
 }
 
-app.whenReady().then(createWindow)
+const DOCS_URL = 'https://segu-g.github.io/nicomview/'
+
+function setupMenu(): void {
+  const menuTemplate: Electron.MenuItemConstructorOptions[] = [
+    {
+      label: '編集',
+      submenu: [
+        { role: 'cut', label: 'カット' },
+        { role: 'copy', label: 'コピー' },
+        { role: 'paste', label: 'ペースト' },
+        { role: 'selectAll', label: 'すべて選択' }
+      ]
+    },
+    {
+      label: 'ヘルプ',
+      submenu: [
+        {
+          label: 'ドキュメントを開く',
+          click: () => shell.openExternal(DOCS_URL)
+        }
+      ]
+    }
+  ]
+
+  if (process.platform === 'darwin') {
+    menuTemplate.unshift({
+      label: app.name,
+      submenu: [
+        { role: 'hide', label: `${app.name}を隠す` },
+        { role: 'hideOthers', label: '他を隠す' },
+        { type: 'separator' },
+        { role: 'quit', label: '終了' }
+      ]
+    })
+  }
+
+  Menu.setApplicationMenu(Menu.buildFromTemplate(menuTemplate))
+}
+
+app.whenReady().then(() => {
+  setupMenu()
+  createWindow()
+})
 
 app.on('window-all-closed', () => {
   commentManager?.disconnect()
