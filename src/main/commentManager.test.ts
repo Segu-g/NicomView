@@ -129,7 +129,7 @@ describe('CommentManager', () => {
 
       mockProvider.emit('operatorComment', opComment)
 
-      expect(broadcastFn).toHaveBeenCalledWith('operatorComment', opComment)
+      expect(broadcastFn).toHaveBeenCalledWith('operatorComment', expect.objectContaining({ content: '放送者コメント' }))
     })
 
     it('nicomget の stateChange イベントを stateChange コールバックに通知する', async () => {
@@ -165,6 +165,55 @@ describe('CommentManager', () => {
       mockProvider.emit('end')
 
       expect(() => manager.disconnect()).not.toThrow()
+    })
+  })
+
+  describe('operatorComment の放送者名補完', () => {
+    it('metadata イベントの broadcasterName が operatorComment の name に補完される', async () => {
+      await manager.connect('lv123456789')
+      mockProvider.emit('metadata', { broadcasterName: '放送者A' })
+
+      mockProvider.emit('operatorComment', { content: 'こんにちは' })
+
+      expect(broadcastFn).toHaveBeenCalledWith('operatorComment', {
+        content: 'こんにちは',
+        name: '放送者A'
+      })
+    })
+
+    it('connect() 戻り値の broadcasterName が operatorComment の name に補完される', async () => {
+      mockProvider.connect.mockResolvedValue({ broadcasterName: '放送者B' })
+      await manager.connect('lv123456789')
+
+      mockProvider.emit('operatorComment', { content: 'テスト' })
+
+      expect(broadcastFn).toHaveBeenCalledWith('operatorComment', {
+        content: 'テスト',
+        name: '放送者B'
+      })
+    })
+
+    it('data.name があっても broadcasterName を優先する', async () => {
+      mockProvider.connect.mockResolvedValue({ broadcasterName: '放送者C' })
+      await manager.connect('lv123456789')
+
+      mockProvider.emit('operatorComment', { content: 'テスト', name: '古い名前' })
+
+      expect(broadcastFn).toHaveBeenCalledWith('operatorComment', {
+        content: 'テスト',
+        name: '放送者C'
+      })
+    })
+
+    it('broadcasterName がない場合は data.name にフォールバックする', async () => {
+      await manager.connect('lv123456789')
+
+      mockProvider.emit('operatorComment', { content: 'テスト', name: '放送者D' })
+
+      expect(broadcastFn).toHaveBeenCalledWith('operatorComment', {
+        content: 'テスト',
+        name: '放送者D'
+      })
     })
   })
 })
