@@ -22,6 +22,7 @@ export class CommentManager {
   private providerFactory: ProviderFactory
   private broadcast: BroadcastFn
   private onStateChange: StateChangeFn
+  private broadcasterName: string | undefined = undefined
 
   constructor(
     providerFactory: ProviderFactory,
@@ -40,6 +41,7 @@ export class CommentManager {
       this.provider = null
     }
 
+    this.broadcasterName = undefined
     this.onStateChange('connecting')
 
     const options: ProviderOptions = { liveId }
@@ -49,8 +51,19 @@ export class CommentManager {
 
     this.provider = this.providerFactory(options)
 
+    this.provider.on('metadata', (metadata: { broadcasterName?: string }) => {
+      this.broadcasterName = metadata.broadcasterName
+    })
+
     for (const event of RELAY_EVENTS) {
       this.provider.on(event, (data: unknown) => {
+        if (event === 'operatorComment') {
+          const op = data as { name?: string }
+          if (!op.name && this.broadcasterName) {
+            this.broadcast(event, { ...op, name: this.broadcasterName })
+            return
+          }
+        }
         this.broadcast(event, data)
       })
     }

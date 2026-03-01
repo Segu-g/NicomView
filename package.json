@@ -48,7 +48,7 @@
     "@mui/icons-material": "^7.3.8",
     "@mui/material": "^7.3.8",
     "express": "^4.21.0",
-    "nicomget": "github:Segu-g/nicomget#v2.0.0",
+    "nicomget": "github:Segu-g/nicomget#v2.1.0",
     "ws": "^8.18.0"
   },
   "devDependencies": {
