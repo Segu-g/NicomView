@@ -8,6 +8,7 @@ interface ProviderOptions {
 
 interface BroadcastMetadata {
   broadcasterName?: string
+  broadcasterIconUrl?: string
 }
 
 interface Provider extends EventEmitter {
@@ -27,6 +28,7 @@ export class CommentManager {
   private broadcast: BroadcastFn
   private onStateChange: StateChangeFn
   private broadcasterName: string | undefined = undefined
+  private broadcasterIconUrl: string | undefined = undefined
 
   constructor(
     providerFactory: ProviderFactory,
@@ -46,6 +48,7 @@ export class CommentManager {
     }
 
     this.broadcasterName = undefined
+    this.broadcasterIconUrl = undefined
     this.onStateChange('connecting')
 
     const options: ProviderOptions = { liveId }
@@ -57,13 +60,18 @@ export class CommentManager {
 
     this.provider.on('metadata', (metadata: BroadcastMetadata) => {
       this.broadcasterName = metadata.broadcasterName
+      this.broadcasterIconUrl = metadata.broadcasterIconUrl
     })
 
     for (const event of RELAY_EVENTS) {
       this.provider.on(event, (data: unknown) => {
         if (event === 'operatorComment') {
-          const op = data as { name?: string }
-          this.broadcast(event, { ...op, name: this.broadcasterName ?? op.name })
+          const op = data as { name?: string; iconUrl?: string }
+          this.broadcast(event, {
+            ...op,
+            name: this.broadcasterName ?? op.name,
+            iconUrl: this.broadcasterIconUrl ?? op.iconUrl,
+          })
           return
         }
         this.broadcast(event, data)
@@ -89,6 +97,9 @@ export class CommentManager {
     const metadata = await this.provider.connect()
     if (metadata?.broadcasterName) {
       this.broadcasterName = metadata.broadcasterName
+    }
+    if (metadata?.broadcasterIconUrl) {
+      this.broadcasterIconUrl = metadata.broadcasterIconUrl
     }
   }
 

@@ -30,6 +30,7 @@ export interface NotificationData {
 export interface OperatorCommentData {
   content?: string
   name?: string
+  iconUrl?: string
   isHistory?: boolean
 }
 

@@ -72,6 +72,7 @@ export function CommentCards() {
       pushCard({
         username: data.name || '放送者',
         content: data.content || '',
+        iconUrl: data.iconUrl,
         type: 'operator',
       }, data.isHistory)
     }, [pushCard]),

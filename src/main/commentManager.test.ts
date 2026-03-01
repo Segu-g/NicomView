@@ -168,6 +168,30 @@ describe('CommentManager', () => {
     })
   })
 
+  describe('operatorComment の放送者アイコン補完', () => {
+    it('metadata イベントの broadcasterIconUrl が operatorComment の iconUrl に補完される', async () => {
+      await manager.connect('lv123456789')
+      mockProvider.emit('metadata', { broadcasterIconUrl: 'https://example.com/icon.jpg' })
+
+      mockProvider.emit('operatorComment', { content: 'こんにちは' })
+
+      expect(broadcastFn).toHaveBeenCalledWith('operatorComment', expect.objectContaining({
+        iconUrl: 'https://example.com/icon.jpg'
+      }))
+    })
+
+    it('connect() 戻り値の broadcasterIconUrl が operatorComment の iconUrl に補完される', async () => {
+      mockProvider.connect.mockResolvedValue({ broadcasterIconUrl: 'https://example.com/icon.jpg' })
+      await manager.connect('lv123456789')
+
+      mockProvider.emit('operatorComment', { content: 'テスト' })
+
+      expect(broadcastFn).toHaveBeenCalledWith('operatorComment', expect.objectContaining({
+        iconUrl: 'https://example.com/icon.jpg'
+      }))
+    })
+  })
+
   describe('operatorComment の放送者名補完', () => {
     it('metadata イベントの broadcasterName が operatorComment の name に補完される', async () => {
       await manager.connect('lv123456789')
