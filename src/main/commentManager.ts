@@ -6,8 +6,12 @@ interface ProviderOptions {
   cookies?: string
 }
 
+interface BroadcastMetadata {
+  broadcasterName?: string
+}
+
 interface Provider extends EventEmitter {
-  connect(): Promise<void>
+  connect(): Promise<BroadcastMetadata | void>
   disconnect(): void
 }
 
@@ -51,7 +55,7 @@ export class CommentManager {
 
     this.provider = this.providerFactory(options)
 
-    this.provider.on('metadata', (metadata: { broadcasterName?: string }) => {
+    this.provider.on('metadata', (metadata: BroadcastMetadata) => {
       this.broadcasterName = metadata.broadcasterName
     })
 
@@ -59,10 +63,8 @@ export class CommentManager {
       this.provider.on(event, (data: unknown) => {
         if (event === 'operatorComment') {
           const op = data as { name?: string }
-          if (!op.name && this.broadcasterName) {
-            this.broadcast(event, { ...op, name: this.broadcasterName })
-            return
-          }
+          this.broadcast(event, { ...op, name: this.broadcasterName ?? op.name })
+          return
         }
         this.broadcast(event, data)
       })
@@ -84,7 +86,10 @@ export class CommentManager {
       this.onStateChange('disconnected')
     })
 
-    await this.provider.connect()
+    const metadata = await this.provider.connect()
+    if (metadata?.broadcasterName) {
+      this.broadcasterName = metadata.broadcasterName
+    }
   }
 
   disconnect(): void {
